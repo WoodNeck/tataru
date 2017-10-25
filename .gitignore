@@ -99,3 +99,15 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# project config
+config.ini
+
+# vscode
+.vscode/
+
+# temporary files
+dinvite_temp.png
+dinvite_temp.webp
+dinvite_timeout.gif
+playerHand.png
