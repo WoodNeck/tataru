@@ -2,8 +2,7 @@ import os
 import sys
 import logging
 import discord
-#from cogs.mahjong import Mahjong
-#from cogs.dangerous_invite import DangerousInvite
+from cogs.utils.observer import Observer
 from cogs.utils.botconfig import BotConfig
 from discord.ext import commands
 
@@ -14,6 +13,30 @@ config = "./config.ini"
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=prefix, **kwargs)
+        self.privateMsgObserver = Observer()
+        self.publicMsgObserver = Observer()
+    
+    def listenPrivateMsg(self, observable):
+        self.privateMsgObserver.register(observable)
+        print("{}을 private message listener에 추가했어용".format(observable))
+    
+    def listenPublicMsg(self, observable):
+        self.publicMsgObserver.register(observable)
+        print("{}을 public message listener에 추가했어용".format(observable))
+    
+    def dropPrivateMsg(self, observable):
+        self.privateMsgObserver.unregister(observable)
+        print("{}을 private message listener에서 제거했어용".format(observable))
+
+    def dropPublicMsg(self, observable):
+        self.publicMsgObserver.unregister(observable)
+        print("{}을 public message listener에서 제거했어용".format(observable))
+    
+    async def updatePrivate(self, message):
+        await self.privateMsgObserver.update(message)
+
+    async def updatePublic(self, message):
+        await self.publicMsgObserver.update(message)
 
 def initialize(bot_class=Bot):
     bot = bot_class(description=des)
@@ -24,18 +47,24 @@ def initialize(bot_class=Bot):
         print("{} 준비 다됬어용".format(bot.user))
         await bot.change_presence(game=discord.Game(name="{}".format(prefix)))
 
-    """
-    @bot.event
-    async def on_resumed():
-        bot.counter["session_resumed"] += 1
-    
-    @bot.event
-    async def on_command(command, ctx):
-        #bot.counter["processed_commands"] += 1
-    """
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=context.Context)
+
+        if ctx.command is None:
+            return
+
+        async with ctx.acquire():
+            await self.invoke(ctx)
 
     @bot.event
     async def on_message(message):
+        if message.author.bot:
+            return
+
+        if (message.channel.type == discord.ChannelType.private):
+            await bot.updatePrivate(message)
+        else:
+            await bot.updatePublic(message)
         """
         if Mahjong.instance.isPlaying and message.author == Mahjong.instance.playingUser:
             await Mahjong.instance.gotMessage(message)
@@ -76,7 +105,6 @@ def initialize(bot_class=Bot):
             await bot.send_message(channel, "지금은 할 수가 없어용"
                                             "{:.2f}초 뒤에 다시 해주세용"
                                             "".format(error.retry_after))
-    
     return bot
 
 def load_cogs(bot):
@@ -96,13 +124,9 @@ def load_cogs(bot):
     if failed:
         print("\n{}를 로드하는데 실패했어용.\n".format(" ".join(failed)))
 
-
-def main(bot):
-    load_cogs(bot)
-
 if __name__ == '__main__':
     bot = initialize()
-    main(bot)
+    load_cogs(bot)
 
     user_token = ""
     config = BotConfig(config)
