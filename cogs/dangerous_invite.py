@@ -21,7 +21,7 @@ class DangerousInvite:
         self.errorMsg = "아쉽게도 킥하지 못했서용, 킥할 권한이 없거나 킥할 인간이 서버주인 것 가타용"
 
         image_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "data/dinvite"))
-        self.baseImage = Image.open("{}/dinvite_2.jpg".format(image_path))
+        self.baseImage = Image.open("{}/dinvite.jpg".format(image_path))
         self.timeOutImage = Image.open("{}/dinvite_timeout.gif".format(image_path))
 
         font_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "data/font"))

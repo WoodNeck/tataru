@@ -13,6 +13,7 @@ config = "./config.ini"
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=prefix, **kwargs)
+        self.prefix = prefix
         self.privateMsgObserver = Observer()
         self.publicMsgObserver = Observer()
     
@@ -66,12 +67,6 @@ def initialize(bot_class=Bot):
         else:
             await bot.updatePublic(message)
         """
-        if Mahjong.instance.isPlaying and message.author == Mahjong.instance.playingUser:
-            await Mahjong.instance.gotMessage(message)
-        if (message.channel.type == discord.ChannelType.private):
-            await DangerousInvite.instance.gotPrivateMessage(message)
-        else:
-            await DangerousInvite.instance.checkTargetMessage(message)
         if len(message.content) == 2:
             if message.content.startswith("z"):
                 if 49 <= ord(message.content[1]) <= 57:
