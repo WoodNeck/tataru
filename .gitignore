@@ -107,7 +107,4 @@ config.ini
 .vscode/
 
 # temporary files
-dinvite_temp.png
-dinvite_temp.webp
-dinvite_timeout.gif
-playerHand.png
+temp/
