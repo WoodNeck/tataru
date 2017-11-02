@@ -66,17 +66,6 @@ def initialize(bot_class=Bot):
             await bot.updatePrivate(message)
         else:
             await bot.updatePublic(message)
-        """
-        if len(message.content) == 2:
-            if message.content.startswith("z"):
-                if 49 <= ord(message.content[1]) <= 57:
-                    with open('./data/gg2/{}.png'.format(message.content), 'rb') as f:
-                        await bot.send_file(message.channel, f)
-            elif message.content.startswith("x"):
-                pass
-            elif message.content.startswith("c"):
-                pass
-        """
         await bot.process_commands(message)
 
     @bot.event

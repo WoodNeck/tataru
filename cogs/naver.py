@@ -1,42 +1,42 @@
 import discord
+import os
 import json
-import urllib.request
+import urllib
+import requests
 from discord.ext import commands
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.observable import Observable
+from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.html_stripper import HTMLStripper
 
 class Naver(Observable):
     def __init__(self, bot):
         self.bot = bot
-        self.client_id = ""
-        self.client_secret = ""
+        self.naverClient = dict()
         self.bot.listenPublicMsg(self)
-
-    def requestNaver(self, url, data=None):
-        request = urllib.request.Request(url)
-        request.add_header("X-Naver-Client-Id", self.client_id)
-        request.add_header("X-Naver-Client-Secret", self.client_secret)
-        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
-        return response
+    
+    def setNaverClient(self, clientId, clientSecret):
+        self.naverClient["X-Naver-Client-Id"] = clientId
+        self.naverClient["X-Naver-Client-Secret"] = clientSecret
 
     @commands.command(pass_context=True)
     async def 지식인(self, ctx, *args):
         if len(args) == 0:
-            await self.bot.say("검색할 내용을 추가로 입력해주세용 ")
+            await self.bot.say("검색할 내용을 추가로 입력해주세용")
             return
         self.bot.send_typing(ctx.message.channel)
         search = "".join([arg for arg in args])
         encText = urllib.parse.quote(search.encode("utf-8"))
         url = "https://openapi.naver.com/v1/search/kin.json?query={}".format(encText)
 
-        response = self.requestNaver(url)
+        http = HTTPHandler()
+        response = http.get(url, self.naverClient)
         rescode = response.getcode()
         if (rescode==200):
             response_body = response.read().decode()
             response_body = json.loads(response_body)
             items = response_body["items"]
-            title = search + "에 대한 지식인 검색 결과에용"
+            title = "{}에 대한 지식인 검색 결과에용".format(search)
             em = discord.Embed(title=title, colour=0xDEADBF)
             cnt = 0
             for item in items:
@@ -46,6 +46,7 @@ class Naver(Observable):
                 if cnt == 5:
                     break
             await self.bot.send_message(ctx.message.channel, embed=em)
+        else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read().decode("utf-8")))
     
     async def update(self, message):
@@ -124,7 +125,8 @@ class Naver(Observable):
         encText = urllib.parse.quote(text)
         data = "source=ko&target={}&text=".format(translateLangToEn[lang]) + encText
 
-        response = self.requestNaver(url, data)
+        http = HTTPHandler()
+        response = http.post(url, self.naverClient, data)
         rescode = response.getcode()
         if(rescode==200):
             response_body = response.read().decode("utf-8")
@@ -141,7 +143,8 @@ class Naver(Observable):
             encText = urllib.parse.quote(args)
             url = "https://openapi.naver.com/v1/krdict/romanization?query=" + encText
 
-            response = self.requestNaver(url)
+            http = HTTPHandler()
+            response = http.get(url, self.naverClient)
             rescode = response.getcode()
             if (rescode==200):
                 response_body = response.read().decode("utf-8")
@@ -171,26 +174,28 @@ class Naver(Observable):
         GENDER = {"male": "남자", "female": "여자"}
 
         self.bot.send_typing(ctx.message.channel)
+        tempDir = os.path.join(os.path.split(os.path.dirname(__file__))[0], "temp", "faceRecog.png")
+
         url_face = "https://openapi.naver.com/v1/vision/face"
         url_celebrity = "https://openapi.naver.com/v1/vision/celebrity"
-        f = open("../temp/faceRecog.png","wb")
-        imageRequest = Request(args, headers={"User-Agent": "Mozilla/5.0"})
-        f.write(urlopen(imageRequest).read())
+        
+        f = open(tempDir,"wb")
+        http = HTTPHandler()
+        image_url = args
+        image = http.get(image_url, headers={"User-Agent": "Mozilla/5.0"})
+        f.write(image.read())
         f.close()
 
-        file = {"image": open("../temp/faceRecog.png", "rb")}
-        headers = {"X-Naver-Client-Id": self.client_id, "X-Naver-Client-Secret": self.client_secret}
-
-        response_face = requests.post(url_face, files=file, headers=headers)
+        file = {"image": open(tempDir, "rb")}
+        response_face = requests.post(url_face, files=file, headers=self.naverClient)
         rescode_face = response_face.status_code
         response_face = json.loads(response_face.text)
 
-        file = {"image": open("../temp/faceRecog.png", "rb")}
-        headers = {"X-Naver-Client-Id": self.client_id, "X-Naver-Client-Secret": self.client_secret}
-
-        response_celebrity = requests.post(url_celebrity, files=file, headers=headers)
+        file = {"image": open(tempDir, "rb")}
+        response_celebrity = requests.post(url_celebrity, files=file, headers=self.naverClient)
         rescode_celebrity = response_celebrity.status_code
         response_celebrity = json.loads(response_celebrity.text)
+
         if(rescode_celebrity == 200 and rescode_face == 200):
             em = discord.Embed(title="얼굴인식 결과에용", colour=0xDEADBF)
             em.set_image(url=args)
@@ -221,7 +226,8 @@ class Naver(Observable):
         encText = urllib.parse.quote(searchText)
         url = "https://openapi.naver.com/v1/search/image?query=" + encText
 
-        response = self.requestNaver(url)
+        http = HTTPHandler()
+        response = http.get(url, self.naverClient)
         rescode = response.getcode()
         if (rescode==200):
             response_body = response.read().decode("utf-8")
@@ -240,7 +246,8 @@ def setup(bot):
     naver = Naver(bot)
     config = "./config.ini"
     config = BotConfig(config)
-    naver.client_id = config.request("Naver", "Client_ID")
-    naver.client_secret = config.request("Naver", "Client_Secret")
+    clientId = config.request("Naver", "Client_ID")
+    clientSecret = config.request("Naver", "Client_Secret")
+    naver.setNaverClient(clientId, clientSecret)
     config.save()
     bot.add_cog(naver)
