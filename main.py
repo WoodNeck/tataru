@@ -116,8 +116,6 @@ if __name__ == '__main__':
     user_token = ""
     config = BotConfig()
     token = config.request("BotUser", "Token")
-    config.request("Naver", "Client_ID")
-    config.request("Naver", "Client_Secret")
     config.save()
 
     bot.run(token)
