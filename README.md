@@ -1,10 +1,9 @@
 # 타타루(Tataru)
 한국어 명령어를 받는 디스코드용의 다목적 봇입니다.
 
-A Korean Discord bot for multiple purpose.
-
 접두사는 "타타루"로 고정되어있지만, main.py 파일에서 수정 가능합니다.
 
+A Korean Discord bot for multiple purpose.
 
 Prefix is fixed to "타타루" but you can change it by changing it in main.py
 
@@ -98,17 +97,17 @@ Returns 지식iN(Naver Q&A Community) search result.
 
 네이버의 Papago SMT와 NMT API를 사용한 한국어->외국어 번역 기능입니다.
 
-Korean to foriegn language translation command using Naver's Papago SMT, NMT API.
-
 `번역해줘` 사용시 Papago SMT API를, `기계번역해줘` 사용시 Papago NMT API를 사용합니다.
-
-Bot will use Papago SMT API when using `번역해줘` command, and will use NMT API when using `기계번역해줘` command.
 
 `번역해줘` 사용시 `영어`, `중국어`, `일본어`로 번역 가능합니다.
 
-Can translate `English`, `Chinese`, `Japanese` when using `번역해줘` command.
-
 `기계번역해줘` 사용시 `영어`, `중국어`로 번역 가능합니다.
+
+Korean to foriegn language translation command using Naver's Papago SMT, NMT API.
+
+Bot will use Papago SMT API when using `번역해줘` command, and will use NMT API when using `기계번역해줘` command.
+
+Can translate `English`, `Chinese`, `Japanese` when using `번역해줘` command.
 
 Can translate `English`, `Chinese` when using `기계번역해줘` command.
 
@@ -164,9 +163,9 @@ Creates a new game of "Dangerous Invite"
 
 명령어 (`타타루 위험한초대`) 입력시 DM을 받고, DM을 통해 3글자의 단어 입력시 위험한초대 게임이 시작됩니다.
 
-By putting a command `타타루 위험한초대`, user will get a DM. After saying 3-length word in DM to bot, game will start.
-
 게임 시작시 24시간의 시간이 주어지며, 시간 내에 시작한 봇을 제외한 어떤 유저든 해당 단어가 포함된 단어를 말할 시 서버에서 추방되고 게임이 종료됩니다. 혹은 24시간의 시간이 지날시 게임을 시작한 사람이 서버에서 추방됩니다.
+
+By putting a command `타타루 위험한초대`, user will get a DM. After saying 3-length word in DM to bot, game will start.
 
 24 hours are given after starting game. Anyone except bots saying a sentence including target word will be kicked from server. If no one says target word within 24 hours, the one who started game will be kicked from server.
 
