@@ -108,3 +108,6 @@ config.ini
 
 # temporary files
 temp/
+
+# codes not used
+obsolete/

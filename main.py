@@ -8,7 +8,6 @@ from discord.ext import commands
 
 des = "타타루에용"
 prefix = "타타루 "
-config = "./config.ini"
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -113,7 +112,7 @@ if __name__ == '__main__':
     load_cogs(bot)
 
     user_token = ""
-    config = BotConfig(config)
+    config = BotConfig()
     token = config.request("BotUser", "Token")
     config.request("Naver", "Client_ID")
     config.request("Naver", "Client_Secret")

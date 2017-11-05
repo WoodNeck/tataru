@@ -29,12 +29,12 @@ class DangerousInvite:
 
     @commands.command(pass_context=True)
     async def 위험한초대(self, ctx):
-        if not self.games.get(ctx.message.channel.id) is None:
-            await self.bot.say("{}에 의해 게임은 이미 시작되었어용".format(self.games[ctx.message.channel.id].initUser.mention))
+        if not self.games.get(ctx.message.server) is None:
+            await self.bot.say("{}에 의해 게임은 이미 시작되었어용".format(self.games[ctx.message.server].initUser.mention))
         else:
             if (ctx.message.channel.type != discord.ChannelType.private):
                 newGame = DangerousInviteGame(self.bot, ctx.message.server, ctx.message.author, ctx.message.channel)
-                self.games[ctx.message.channel.id] = newGame
+                self.games[ctx.message.server] = newGame
                 await self.bot.send_message(ctx.message.author, "3글자의 금지단어를 말해주세용")
                 await self.bot.add_reaction(ctx.message, "👍")
                 self.bot.listenPrivateMsg(newGame)
