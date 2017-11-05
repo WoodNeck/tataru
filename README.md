@@ -8,15 +8,15 @@ A Korean Discord bot for multiple purpose.
 
 Prefix is fixed to "타타루" but you can change it by changing it in main.py
 
-## Requirements
+# Requirements
 - Discord Bot User Token
     - (https://discordapp.com/developers/applications/me)
 - Naver Client ID & Secret to use "Naver" cog
     - (https://developers.naver.com/apps/#/register)
 
-## 명령어(Commands)
-#### General
-###### 골라줘(Choose)
+# 명령어(Commands)
+## General
+#### 골라줘(Choose)
 `타타루` `골라줘` `고를` `대상` `들`
 ```
 타타루 골라줘 하나 둘 셋
@@ -26,7 +26,9 @@ Prefix is fixed to "타타루" but you can change it by changing it in main.py
 
 Choose one of the arguments
 
-###### 따귀(Slap)
+*****
+
+#### 따귀(Slap)
 `타타루` `따귀` `대상`
 ```
 타타루 따귀 @찬피
@@ -36,7 +38,9 @@ Choose one of the arguments
 
 Slap the target given.
 
-###### 주사위(Dice)
+*****
+
+#### 주사위(Dice)
 `타타루` `주사위` `최대숫자`
 ```
 타타루 주사위
@@ -48,7 +52,9 @@ Slap the target given.
 
 Roll dice between 1 to 100. If number is given, roll dice between 1 to that number.
 
-###### 핑(Ping)
+*****
+
+#### 핑(Ping)
 `타타루` `핑`
 ```
 타타루 핑
@@ -58,7 +64,9 @@ Roll dice between 1 to 100. If number is given, roll dice between 1 to that numb
 
 Returns message "Pong".
 
-###### 초대(Invite)
+*****
+
+#### 초대(Invite)
 `타타루` `초대`
 ```
 타타루 초대
@@ -68,14 +76,18 @@ Returns message "Pong".
 
 Returns invite link for Tataru bot.
 
-#### Naver
-###### 지식인(Naver Q&A community search)
+*****
+
+## Naver
+#### 지식인(Naver Q&A community search)
 `타타루` `지식인` `물어볼 내용`
 물어볼 내용에 해당하는 지식인 검색 결과를 반환합니다.
 
 Returns 지식iN(Naver Q&A Community) search result.
 
-###### 번역(Translation)
+*****
+
+#### 번역(Translation)
 `타타루` `번역할 언어`로 `번역해줘/기계번역해줘` `번역할 내용`
 ```
 타타루 영어로 번역해줘 안녕하세요
@@ -100,7 +112,9 @@ Can translate `English`, `Chinese`, `Japanese` when using `번역해줘` command
 
 Can translate `English`, `Chinese` when using `기계번역해줘` command.
 
-###### 로마자변환(Romanization)
+*****
+
+#### 로마자변환(Romanization)
 `타타루` `로마자변환` `변환할 인명`
 ```
 타타루 로마자변환 홍길동
@@ -110,30 +124,38 @@ Can translate `English`, `Chinese` when using `기계번역해줘` command.
 
 By using Naver API, bot sends romanization result of Korean name.
 
-###### 얼굴인식(Face recognition)
+*****
+
+#### 얼굴인식(Face recognition)
 `타타루` `얼굴인식` `인식할 이미지 URL`
 
 네이버 API를 이용, 이미지에서 얼굴인식된 결과를 받아옵니다. 얼굴인식 결과에는 감정, 성별, 나이, 닮은 연예인과 같은 정보가 포함되어 있습니다.
 
 By using Naver API, bot sends face recognition result including info of emotion, gender, age, similar celebrity.
 
-###### 네이버이미지(Naver image search)
+*****
+
+#### 네이버이미지(Naver image search)
 `타타루` `네이버이미지` `검색할 내용`
 
 네이버의 이미지 검색 결과를 받아옵니다.
 
 Returns image search result from Naver.
 
-#### Google
-###### 이미지(Image)
+*****
+
+## Google
+#### 이미지(Image)
 `타타루` `이미지` `검색할 내용`
 
 구글의 이미지 검색 결과를 받아옵니다.
 
 Returns image search result from Google.
 
-#### Dangerous Invite
-###### 위험한초대(Dangerous Invite Game)
+*****
+
+## Dangerous Invite
+#### 위험한초대(Dangerous Invite Game)
 `타타루` `위험한초대`
 
 위험한초대 게임을 만듭니다.
@@ -148,8 +170,10 @@ By putting a command `타타루 위험한초대`, user will get a DM. After sayi
 
 24 hours are given after starting game. Anyone except bots saying a sentence including target word will be kicked from server. If no one says target word within 24 hours, the one who started game will be kicked from server.
 
-## 추가기능(Additional Features)
-###### GG2 Bubble 변환
+*****
+
+# 추가기능(Additional Features)
+## GG2 Bubble 변환
 채팅 메시지가 GG2 bubble에 해당하는 메시지일시 해당 버블 이미지를 전송.
 
 If message content is same with GG2 bubble, it will send that image.
