@@ -4,11 +4,11 @@ from pathlib import Path
 
 class BotConfig:
     def __init__(self):
-        self.configPath = "./config.ini"
+        self.configPath = "config.ini"
         configFile = Path(self.configPath)
         self.config = configparser.ConfigParser()
         if configFile.is_file():
-            self.config.read(configFile)
+            self.config.read_file(open(configFile))
     
     def add(self, section, key, value):
         if section not in self.config:

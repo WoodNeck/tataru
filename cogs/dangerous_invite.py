@@ -67,7 +67,7 @@ class DangerousInviteGame(Observable):
         self.targetWord = word
         self.bot.dropPrivateMsg(self)
         self.bot.listenPublicMsg(self)
-        print("위험한초대가 {}에 의해 {}:{}에서 새로 생성되었어용. 금칙어는 {}에용".format(self.initUser.mention, self.initServer, self.initChannel, self.targetWord))
+        print("위험한초대가 {}에 의해 {}:{}에서 새로 생성되었어용. 금칙어는 {}(이)에용".format(self.initUser.mention, self.initServer, self.initChannel, self.targetWord))
         self.loop = asyncio.get_event_loop()
         asyncio.run_coroutine_threadsafe(self.timeOut(86400), self.loop)
 

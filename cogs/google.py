@@ -1,9 +1,5 @@
 import discord
-import sys
-import time
 import urllib
-import asyncio
-from threading import Event
 from discord.ext import commands
 from cogs.utils.http_handler import HTTPHandler
 
@@ -80,6 +76,10 @@ class Google:
             start_line = s.find('"class="rg_meta"')
             start_content = s.find('"ou"',start_line+1)
             end_content = s.find(',"ow"',start_content+1)
+            if start_content == -1 or end_content == 0:
+                end_quote = 0
+                link = "no_links"
+                return link, end_quote
             content_raw = str(s[start_content+6:end_content-1])
             return content_raw, end_content
 

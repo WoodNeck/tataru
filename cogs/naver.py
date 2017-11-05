@@ -75,13 +75,6 @@ class Naver(Observable):
         elif langGiven and not methodGiven:
             await self.bot.send_message(channel, "`번역해줘` 또는 `기계번역해줘`가 가능해용")
             return
-        elif not langGiven and methodGiven:
-            if method == "번역해줘":
-                availableLang = translateAbleLang
-            else:
-                availableLang = mtranslateAbleLang
-            await self.noticeAvailableLanguage(channel, availableLang)
-            return
         else:
             if method == "번역해줘":
                 availableLang = translateAbleLang
