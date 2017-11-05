@@ -189,6 +189,8 @@ class MilitaryInfo:
                 except Exception as e:
                     print(e)
                     self.data = dict()
+        else:
+            self.data = dict()
 
     def save(self):
         f = open(self.path, "w")
