@@ -107,9 +107,9 @@ Korean to foriegn language translation command using Naver's Papago SMT, NMT API
 
 Bot will use Papago SMT API when using `번역해줘` command, and will use NMT API when using `기계번역해줘` command.
 
-Can translate `English`, `Chinese`, `Japanese` when using `번역해줘` command.
+Can translate to `English`, `Chinese`, `Japanese` when using `번역해줘` command.
 
-Can translate `English`, `Chinese` when using `기계번역해줘` command.
+Can translate to `English`, `Chinese` when using `기계번역해줘` command.
 
 *****
 
