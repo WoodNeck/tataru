@@ -90,27 +90,28 @@ class General(Observable):
                         dateinfo = [int(i) for i in dateinfo]
                         startDate = datetime.date(dateinfo[0], dateinfo[1], dateinfo[2])
                         availableFormatted = ["`{}`".format(m) for m in available]
-                        await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
-                        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
-                        if msg and msg.content:
-                            if msg.content in available:
-                                if msg.content == "육군":
-                                    info = Military(startDate)
-                                elif msg.content == "공군":
-                                    info = Airforce(startDate)
-                                elif msg.content == "공익":
-                                    info = PublicService(startDate)
-                                self.military.setData(name, info)
-
-                                em = discord.Embed(title="{}{}를 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
-                                await self.bot.send_message(ctx.message.channel, embed=em)
-                            else:
-                                await self.bot.say("셋 중에 하나를 입력해주세용")
-                        else:
-                            await self.bot.say("취소되었어용")
                     except Exception as e:
                         print(e)
                         await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
+                        return
+                    await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
+                    msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
+                    if msg and msg.content:
+                        if msg.content in available:
+                            if msg.content == "육군":
+                                info = Military(startDate)
+                            elif msg.content == "공군":
+                                info = Airforce(startDate)
+                            elif msg.content == "공익":
+                                info = PublicService(startDate)
+                            self.military.setData(name, info)
+
+                            em = discord.Embed(title="{}{}를 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
+                            await self.bot.send_message(ctx.message.channel, embed=em)
+                        else:
+                            await self.bot.say("셋 중에 하나를 입력해주세용")
+                    else:
+                        await self.bot.say("취소되었어용")
                 else:
                     await self.bot.say("취소되었어용")
             else:
