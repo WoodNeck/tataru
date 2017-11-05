@@ -3,8 +3,8 @@ import configparser
 from pathlib import Path
 
 class BotConfig:
-    def __init__(self, path):
-        self.configPath = path
+    def __init__(self):
+        self.configPath = "./config.ini"
         configFile = Path(self.configPath)
         self.config = configparser.ConfigParser()
         if configFile.is_file():

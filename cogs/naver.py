@@ -244,8 +244,7 @@ class Naver(Observable):
 
 def setup(bot):
     naver = Naver(bot)
-    config = "./config.ini"
-    config = BotConfig(config)
+    config = BotConfig()
     clientId = config.request("Naver", "Client_ID")
     clientSecret = config.request("Naver", "Client_Secret")
     naver.setNaverClient(clientId, clientSecret)
