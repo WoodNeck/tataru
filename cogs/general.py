@@ -106,7 +106,7 @@ class General(Observable):
                                 info = PublicService(startDate)
                             self.military.setData(name, info)
 
-                            em = discord.Embed(title="{}{}를 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
+                            em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
                             await self.bot.send_message(ctx.message.channel, embed=em)
                         else:
                             await self.bot.say("셋 중에 하나를 입력해주세용")
@@ -128,13 +128,13 @@ class General(Observable):
                 total = discharge - ipdae
                 donePercentage = accomplished.days * 100 / total.days
 
-                percentVisualization = ""
+                percentVisualization = []
                 (doneEmoji, yetEmoji) = person.getEmojiSet()
-                for i in range(1, 101):
-                    if (donePercentage >= i):
-                        percentVisualization += doneEmoji
-                    else:
-                        percentVisualization += yetEmoji
+                doneCount = min(int(donePercentage), 100)
+
+                percentVisualization.append(doneEmoji * doneCount)
+                percentVisualization.append(yetEmoji * (100 - doneCount))
+                percentVisualization = "".join(percentVisualization)
                 
                 desc = """
                     {}\n입대일: {}\n전역일: {}\n복무한 날: {}일\n남은 날: {}일\n오늘까지 복무율: {:.2f}%
@@ -203,9 +203,6 @@ class MilitaryInfo:
 class Military:
     def __init__(self, startDate):
         self.startDate = startDate
-
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
     
     def getStartDate(self):
         return self.startDate
