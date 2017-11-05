@@ -108,6 +108,7 @@ config.ini
 
 # temporary files
 temp/
+military_info.json
 
 # codes not used
 obsolete/
