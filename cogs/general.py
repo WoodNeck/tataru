@@ -75,51 +75,13 @@ class General(Observable):
 
     @commands.command(pass_context=True)
     async def 전역일(self, ctx, arg):
-        available = ["육군", "공군", "공익"]
-
         if arg == "추가해줘":
-            await self.bot.say("등록할 이름을 말해주세용")
-            msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
-            if msg and msg.content:
-                name = msg.content
-                await self.bot.say("입대일자를 YYYY/MM/DD 양식으로 말해주세용")
-                msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
-                if msg and msg.content:
-                    try:
-                        dateinfo = msg.content.split("/")
-                        dateinfo = [int(i) for i in dateinfo]
-                        startDate = datetime.date(dateinfo[0], dateinfo[1], dateinfo[2])
-                        availableFormatted = ["`{}`".format(m) for m in available]
-                    except Exception as e:
-                        print(e)
-                        await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
-                        return
-                    await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
-                    msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
-                    if msg and msg.content:
-                        if msg.content in available:
-                            if msg.content == "육군":
-                                info = Military(startDate)
-                            elif msg.content == "공군":
-                                info = Airforce(startDate)
-                            elif msg.content == "공익":
-                                info = PublicService(startDate)
-                            self.military.setData(name, info)
-
-                            em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
-                            await self.bot.send_message(ctx.message.channel, embed=em)
-                        else:
-                            await self.bot.say("셋 중에 하나를 입력해주세용")
-                    else:
-                        await self.bot.say("취소되었어용")
-                else:
-                    await self.bot.say("취소되었어용")
-            else:
-                await self.bot.say("취소되었어용")
+            await self.addDischargeInfo(ctx)
         else:
             name = arg
-            if name in self.military.data:
-                person = self.military.data[name]
+            server = self.military.servers.get(ctx.message.server.id)
+            if server and name in server:
+                person = server[name]
                 ipdae = person.getStartDate()
                 discharge = person.getDischargeDate()
                 now = datetime.datetime.now().date()
@@ -144,6 +106,63 @@ class General(Observable):
                 await self.bot.send_message(ctx.message.channel, embed=em)
             else:
                 await self.bot.say("그 이름은 등록되어있지 않아용")
+    
+    async def addDischargeInfo(self, ctx):
+        name = await self.checkName(ctx)
+        if not name:
+            await self.bot.say("취소되었어용")
+            return
+        
+        startDate = await self.checkStartDate(ctx)
+        if not startDate:
+            return
+        
+        armyType = await self.checkArmyType(ctx)
+        if not armyType:
+            await self.bot.say("취소되었어용")
+            return
+
+        self.military.setData(ctx.message.server.id, name, info)
+        em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
+        await self.bot.send_message(ctx.message.channel, embed=em)
+
+    async def checkName(self, ctx):
+        await self.bot.say("등록할 이름을 말해주세용")
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
+        if msg and msg.content:
+            name = msg.content
+            return name
+    
+    async def checkStartDate(self, ctx):
+        await self.bot.say("입대일자를 YYYY/MM/DD 양식으로 말해주세용")
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
+        if msg and msg.content:
+            try:
+                dateinfo = msg.content.split("/")
+                dateinfo = [int(i) for i in dateinfo]
+                startDate = datetime.date(dateinfo[0], dateinfo[1], dateinfo[2])
+                return startDate
+            except Exception as e:
+                await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
+                return
+    
+    async def checkArmyType(self, ctx):
+        available = ["육군", "공군", "공익"]
+        availableFormatted = ["`{}`".format(m) for m in available]
+        await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
+        if msg and msg.content:
+            if msg.content in available:
+                if msg.content == "육군":
+                    info = Military(startDate)
+                elif msg.content == "공군":
+                    info = Airforce(startDate)
+                elif msg.content == "공익":
+                    info = PublicService(startDate)
+                return info
+            else:
+                await self.bot.say("셋 중에 하나를 입력해주세용")
+
 
     @commands.command(pass_context=True)
     async def 수능(self, ctx):
@@ -162,41 +181,47 @@ class General(Observable):
 class MilitaryInfo:
     def __init__(self):
         self.path = "military_info.json"
-        self.data = None
+        self.servers = dict()
     
-    def setData(self, key, value):
-        self.data[key] = value
+    def setData(self, serverId, key, value):
+        targetServer = self.servers.get(serverId)
+        if not tartgetServer:
+            targetServer = dict()
+            self.servers[serverId] = targetServer
+        targetServer[key] = value
         self.save()
 
     def load(self):
         file = Path(self.path)
-        if file.is_file():
-            with open(self.path) as info:
-                try:
-                    encodedDict = json.load(info)
-                    self.data = dict()
-                    for key in encodedDict:
-                        personInfo = encodedDict[key]
-                        encodedDate = personInfo["startDate"]
-                        encodedDate = [int(i) for i in encodedDate.split("/")]
-                        encodedDate = datetime.date(encodedDate[0], encodedDate[1], encodedDate[2])
-                        if personInfo["class"] == "Military":
-                            self.data[key] = Military(encodedDate)
-                        elif personInfo["class"] == "Airforce":
-                            self.data[key] = Airforce(encodedDate)
-                        elif personInfo["class"] == "PublicService":
-                            self.data[key] = PublicService(encodedDate)
-                except Exception as e:
-                    print(e)
-                    self.data = dict()
-        else:
-            self.data = dict()
+        if not file.is_file():
+            return
+        with open(self.path) as info:
+            encodedDict = json.load(info)
+            for serverHash in encodedDict:
+                serverInfo = encodedDict[serverHash]
+                self.servers[serverHash] = dict()
+                server = self.servers[serverHash]
+                for name in serverInfo:
+                    personInfo = serverInfo[name]
+                    encodedDate = personInfo["startDate"]
+                    encodedDate = [int(i) for i in encodedDate.split("/")]
+                    encodedDate = datetime.date(encodedDate[0], encodedDate[1], encodedDate[2])
+                    if personInfo["class"] == "Military":
+                        server[name] = Military(encodedDate)
+                    elif personInfo["class"] == "Airforce":
+                        server[name] = Airforce(encodedDate)
+                    elif personInfo["class"] == "PublicService":
+                        server[name] = PublicService(encodedDate)
 
     def save(self):
         f = open(self.path, "w")
         infoToDump = {}
-        for key in self.data:
-            infoToDump[key] = self.data[key].encode()
+        for serverId in self.servers:
+            serverInfo = self.servers[serverId]
+            serverDump = {}
+            infoToDump[serverId] = serverDump
+            for name in serverInfo:
+                serverDump[name] = serverInfo[name].encode()
         f.write(json.dumps(infoToDump))
         f.close()
 
