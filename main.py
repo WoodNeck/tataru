@@ -20,26 +20,22 @@ class Bot(commands.Bot):
     
     def listenPrivateMsg(self, observable):
         self.privateMsgObserver.register(observable)
-        print("{}을 private message listener에 추가했어용".format(observable))
     
     def listenPublicMsg(self, observable):
         self.publicMsgObserver.register(observable)
-        print("{}을 public message listener에 추가했어용".format(observable))
     
     def dropPrivateMsg(self, observable):
         self.privateMsgObserver.unregister(observable)
-        print("{}을 private message listener에서 제거했어용".format(observable))
 
     def dropPublicMsg(self, observable):
         self.publicMsgObserver.unregister(observable)
-        print("{}을 public message listener에서 제거했어용".format(observable))
     
     async def updatePrivate(self, message):
         await self.privateMsgObserver.update(message)
 
     async def updatePublic(self, message):
         await self.publicMsgObserver.update(message)
-
+    
 def initialize(bot_class=Bot):
     bot = bot_class(description=des)
 
@@ -67,7 +63,7 @@ def initialize(bot_class=Bot):
             await bot.updatePrivate(message)
         else:
             await bot.updatePublic(message)
-        await bot.process_commands(message)
+            await bot.process_commands(message)
 
     @bot.event
     async def on_command_error(error, ctx):
