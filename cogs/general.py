@@ -224,7 +224,7 @@ class General(Observable):
         optionCnt = 0
         for option in options:
             result.add_field(name="{}: {}".format(optionEmojis[optionCnt], options[optionCnt]),
-            value="{}표".format(reactions.get(optionEmojis[optionCnt])))
+            value="{}표".format(reactions.get(optionEmojis[optionCnt]) - 1))
             optionCnt += 1
 
         await self.bot.send_message(ctx.message.channel, embed=result)
