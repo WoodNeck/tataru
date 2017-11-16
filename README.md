@@ -8,14 +8,39 @@ A Korean Discord bot for multiple purpose.
 Prefix is fixed to "타타루" but you can change it by changing it in main.py
 
 # Prerequisites
+- Python version 3.5 or higher
 - Discord Bot User Token
     - (https://discordapp.com/developers/applications/me)
 - Naver Client ID & Secret to use "Naver" cog
     - (https://developers.naver.com/apps/#/register)
 
 # Installing
-**Linux**
-- libopus-dev
+## Linux
+1. Clone this repository
+
+```
+git clone https://github.com/WoodNeck/tataru.git
+```
+
+2. Install dependencies
+
+```
+sudo apt-get install python3-pip
+sudo pip3 install discord
+sudo pip3 install Pillow
+sudo pip3 install python-dateutil
+sudo apt-get install libopus-dev
+sudo pip3 install pynacl
+sudo add-apt-repository ppa:mc3man/trusty-media
+sudo apt-get update
+sudo apt-get dist-upgrade
+```
+
+3. Execute main.py
+```
+cd tataru
+sudo python3 main.py
+```
 
 # 명령어(Commands)
 ## General
