@@ -7,11 +7,15 @@ A Korean Discord bot for multiple purpose.
 
 Prefix is fixed to "타타루" but you can change it by changing it in main.py
 
-# Requirements
+# Prerequisites
 - Discord Bot User Token
     - (https://discordapp.com/developers/applications/me)
 - Naver Client ID & Secret to use "Naver" cog
     - (https://developers.naver.com/apps/#/register)
+
+# Installing
+**Linux**
+- libopus-dev
 
 # 명령어(Commands)
 ## General
