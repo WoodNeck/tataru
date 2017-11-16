@@ -38,7 +38,8 @@ class SoundPlayer:
                 if voiceClient.channel != voiceChannel:
                     await voiceClient.move_to(voiceChannel)
                 return voiceClient
-        except:
+        except Exception as e:
+            print(e)
             await self.bot.send_message(ctx.message.channel, "먼저 보이스채널에 들어가주세용")
             return None
 
