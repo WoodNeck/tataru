@@ -69,12 +69,21 @@ class SoundPlayer:
             await self.bot.say("재생할 사운드를 추가로 입력해주세용")
             return
         soundString = " ".join([arg for arg in args])
-        soundPath = './data/sound/{}.mp3'.format(soundString)
-        if os.path.exists(soundPath):
-            await self.play(ctx, soundPath)
-        else:
-            await self.bot.say("없는 사운드에용")
-            return
+        if soundString == "목록":
+            soundList = []
+            for (dirpath, dirnames, filenames) in os.walk("./data/sound"):
+                soundList.extend(filenames)
+                break
+            soundList = ["🎶{}".format(sound.split(".")[0]) for sound in soundList]
+            desc = "\n".join(soundList)
+            await self.bot.say("```재생가능한 음성 목록이에용\n{}```".format(desc))
+        else:        
+            soundPath = "./data/sound/{}.mp3".format(soundString) # Only .mp3 file is allowed
+            if os.path.exists(soundPath):
+                await self.play(ctx, soundPath)
+            else:
+                await self.bot.say("없는 사운드에용")
+                return
 
 def afterPlay(player):
     player.stop()
