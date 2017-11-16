@@ -1,30 +1,24 @@
 import discord
 import os
-import functools
-from discord.ext import commands
 from discord import opus
+from discord.ext import commands
 
 OPUS_LIBS = ['libopus-0.x86.dll', 'libopus-0.x64.dll', 'libopus-0.dll', 'libopus.so.0', 'libopus.0.dylib']
 
 def load_opus_lib(opus_libs=OPUS_LIBS):
     if opus.is_loaded():
         return True
-
     for opus_lib in opus_libs:
         try:
             opus.load_opus(opus_lib)
             return
         except OSError:
             pass
+    raise RuntimeError("OPUS 라이브러리를 로드하는데 실패했어용. 이것들을 시도해봤어용: {}".format(", ".join(opus_libs)))
 
-    raise RuntimeError('Could not load an opus lib. Tried %s' % (', '.join(opus_libs)))
-
-class SoundPlayer:
-    instance = None
-
+class Sound:
     def __init__(self, bot):
         self.bot = bot
-        SoundPlayer.instance = self
         self.joinedServer = dict()
         load_opus_lib()
 
@@ -70,24 +64,28 @@ class SoundPlayer:
             return
         soundString = " ".join([arg for arg in args])
         if soundString == "목록":
-            soundList = []
-            for (dirpath, dirnames, filenames) in os.walk("./data/sound"):
-                soundList.extend(filenames)
-                break
-            soundList = ["🎶{}".format(sound.split(".")[0]) for sound in soundList]
-            desc = "\n".join(soundList)
-            await self.bot.say("```재생가능한 음성 목록이에용\n{}```".format(desc))
+            self.printSoundList(ctx)      
         else:        
             soundPath = "./data/sound/{}.mp3".format(soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
                 await self.play(ctx, soundPath)
             else:
                 await self.bot.say("없는 사운드에용")
-                return
+    
+    async def printSoundList(self, ctx):
+        soundList = []
+        for (dirpath, dirnames, filenames) in os.walk("./data/sound"):
+            soundList.extend(filenames)
+            break
+        soundList = ["🎶{}".format(sound.split(".")[0]) for sound in soundList]
+        desc = "\n".join(soundList)
+        await self.bot.send_message(ctx.message.channel, "```재생가능한 음성 목록이에용\n{}```".format(desc))
 
 def afterPlay(player):
+    print(player)
+    print("재생이 종료되었음")
     player.stop()
 
 def setup(bot):
-    cog = SoundPlayer(bot)
+    cog = Sound(bot)
     bot.add_cog(cog)
