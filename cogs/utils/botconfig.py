@@ -1,14 +1,13 @@
 import os
 import configparser
-from pathlib import Path
 
 class BotConfig:
     def __init__(self):
         self.configPath = "config.ini"
-        configFile = Path(self.configPath)
         self.config = configparser.ConfigParser()
-        if configFile.is_file():
-            self.config.read_file(open(configFile))
+        if os.path.isfile(self.configPath):
+            configFile = open(self.configPath, "r")
+            self.config.read_file(configFile)
     
     def add(self, section, key, value):
         if section not in self.config:
