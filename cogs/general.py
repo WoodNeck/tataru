@@ -167,7 +167,7 @@ class General(Observable):
 
     @commands.command(pass_context=True)
     async def 수능(self, ctx):
-        dday = datetime.date(2017, 11, 16)
+        dday = datetime.date(2017, 11, 23)
         t = datetime.time(8, 40, 00)
         sunung = datetime.datetime.combine(dday, t)
         now = datetime.datetime.now()
