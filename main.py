@@ -75,6 +75,7 @@ def initialize(bot_class=Bot):
             await bot.send_message(channel, "비활성화된 명령어에용.")
         elif isinstance(error, commands.CommandInvokeError):
             await bot.send_message(channel, str(error))
+            print(error)
         elif isinstance(error, commands.CommandNotFound):
             pass
         elif isinstance(error, commands.CheckFailure):

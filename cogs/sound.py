@@ -1,7 +1,9 @@
 import discord
+import asyncio
 import os
 from discord import opus
 from discord.ext import commands
+from cogs.utils.music_player import MusicPlayer
 
 OPUS_LIBS = ['libopus-0.x86.dll', 'libopus-0.x64.dll', 'libopus-0.dll', 'libopus.so.0', 'libopus.0.dylib']
 
@@ -19,7 +21,8 @@ def load_opus_lib(opus_libs=OPUS_LIBS):
 class Sound:
     def __init__(self, bot):
         self.bot = bot
-        self.joinedServer = dict()
+        self.loop = bot.loop
+        self.musicPlayers = dict()
         load_opus_lib()
 
     async def joinVoice(self, ctx):
@@ -33,21 +36,17 @@ class Sound:
                     await voiceClient.move_to(voiceChannel)
                 return voiceClient
         except Exception as e:
-            print(e)
             await self.bot.send_message(ctx.message.channel, "먼저 보이스채널에 들어가주세용")
             return None
 
-    async def leaveVoice(self, ctx):
-        voiceClient = self.bot.voice_client_in(ctx.message.server)
-        if voiceClient is not None:
+    async def leaveVoice(self, server):
+        voiceClient = self.bot.voice_client_in(server)
+        if voiceClient:
             voiceChannel = voiceClient.channel
             await voiceClient.disconnect()
-    
-    async def play(self, ctx, soundPath):
-        voiceClient = await self.joinVoice(ctx)
-        if voiceClient is not None:
-            soundPlayer = voiceClient.create_ffmpeg_player(soundPath, after=afterPlay)
-            soundPlayer.start()
+        player = self.musicPlayers.get(server.id)
+        if player:
+            self.musicPlayers.pop(server.id)
 
     @commands.command(pass_context=True)
     async def 들어와(self, ctx):
@@ -55,7 +54,7 @@ class Sound:
 
     @commands.command(pass_context=True)
     async def 나가(self, ctx):
-        await self.leaveVoice(ctx)
+        await self.leaveVoice(ctx.message.server)
 
     @commands.command(pass_context=True)
     async def 재생해줘(self, ctx, *args):
@@ -71,6 +70,29 @@ class Sound:
                 await self.play(ctx, soundPath)
             else:
                 await self.bot.say("없는 사운드에용")
+
+    async def play(self, ctx, soundPath):
+        voiceClient = await self.joinVoice(ctx)
+        if voiceClient is not None:
+            musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+            if not musicPlayer:
+                musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
+                self.musicPlayers[ctx.message.server.id] = musicPlayer
+            musicPlayer.add(soundPath)
+            musicPlayer.play()
+    
+    @commands.command(pass_context=True)
+    async def 정지(self, ctx):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if musicPlayer:
+            musicPlayer.stop()
+            self.musicPlayers.pop(ctx.message.server.id)
+
+    @commands.command(pass_context=True)
+    async def 스킵(self, ctx):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if musicPlayer:
+            musicPlayer.skip()
     
     async def printSoundList(self, ctx):
         soundList = []
@@ -80,11 +102,6 @@ class Sound:
         soundList = ["🎶{}".format(sound.split(".")[0]) for sound in soundList]
         desc = "\n".join(soundList)
         await self.bot.send_message(ctx.message.channel, "```재생가능한 음성 목록이에용\n{}```".format(desc))
-
-def afterPlay(player):
-    print(player)
-    print("재생이 종료되었음")
-    player.stop()
 
 def setup(bot):
     cog = Sound(bot)
