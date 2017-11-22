@@ -118,8 +118,8 @@ class General(Observable):
         if not startDate:
             return
         
-        armyType = await self.checkArmyType(ctx)
-        if not armyType:
+        info = await self.checkArmyType(ctx, startDate)
+        if not info:
             await self.bot.say("취소되었어용")
             return
 
@@ -147,7 +147,7 @@ class General(Observable):
                 await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
                 return
     
-    async def checkArmyType(self, ctx):
+    async def checkArmyType(self, ctx, startDate):
         available = ["육군", "공군", "공익"]
         availableFormatted = ["`{}`".format(m) for m in available]
         await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
@@ -224,7 +224,7 @@ class General(Observable):
         optionCnt = 0
         for option in options:
             result.add_field(name="{}: {}".format(optionEmojis[optionCnt], options[optionCnt]),
-            value="{}표".format(reactions.get(optionEmojis[optionCnt])))
+            value="{}표".format(reactions.get(optionEmojis[optionCnt]) - 1))
             optionCnt += 1
 
         await self.bot.send_message(ctx.message.channel, embed=result)
@@ -236,7 +236,7 @@ class MilitaryInfo:
     
     def setData(self, serverId, key, value):
         targetServer = self.servers.get(serverId)
-        if not tartgetServer:
+        if not targetServer:
             targetServer = dict()
             self.servers[serverId] = targetServer
         targetServer[key] = value

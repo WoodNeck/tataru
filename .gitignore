@@ -113,5 +113,6 @@ military_info.json
 # codes not used
 obsolete/
 
-# kejangcon
+# data files
 data/kejang
+data/sound
