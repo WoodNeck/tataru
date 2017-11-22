@@ -1,7 +1,10 @@
 import discord
+import urllib
+import json
 from discord.ext import commands
 from cogs.utils.observable import Observable
 from cogs.utils.http_handler import HTTPHandler
+from cogs.utils.stat_session import StatSession
 
 class GG2(Observable):
     def __init__(self, bot):
@@ -38,7 +41,7 @@ class GG2(Observable):
                     return
     
     @commands.command(pass_context=True)
-    async def 갱게로비(self, ctx, *arg):
+    async def 갱게서버(self, ctx):
         GG2_LOBBY_URL = "http://www.ganggarrison.com/lobby/status"
         http = HTTPHandler()
         response = http.get(GG2_LOBBY_URL, None)
@@ -46,7 +49,7 @@ class GG2(Observable):
         if (rescode==200):
             response_body = response.read().decode()
             serverList = self.findServerList(response_body)
-            em = discord.Embed(title="Lobby Status", colour=0xDEADBF)
+            em = discord.Embed(title="현재 GG2 로비 정보에용", colour=0xDEADBF)
             for server in serverList:
                 personPercentage = server.current / server.max
                 if personPercentage < 0.33:
@@ -101,7 +104,57 @@ class GG2(Observable):
             serverNext = body.find("<tr>", serverNext) + 1
         
         return serverList
-        
+
+    @commands.command(pass_context=True)
+    async def 갱게스텟(self, ctx, *args):
+        if len(args) == 0:
+            await self.bot.say("닉네임도 주세용")
+            return
+        nickname = " ".join([arg for arg in args])
+        nickname = urllib.parse.quote(nickname.encode("utf-8"))
+        url = "http://gg2statsapp.appspot.com/getstat?nickname={}".format(nickname)
+
+        http = HTTPHandler()
+        response = http.get(url, None)
+        rescode = response.getcode()
+        if not rescode == 200:
+            await self.bot.say("오류가 발생했어용: {}".format(rescode))
+            return
+
+        response_body = response.read().decode()
+        stat = json.loads(response_body)
+        if not stat:
+            await self.bot.say("해당 유저의 정보가 없어용")
+            return
+
+        session = StatSession(stat)
+        em = session.overall()
+        msg = await self.bot.send_message(ctx.message.channel, embed=em)
+
+        emojiMenu = ["⬅", "➡", "❌"]
+        for emoji in emojiMenu:
+            await self.bot.add_reaction(msg, emoji)
+
+        while True:
+            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+            if not res:
+                for emoji in emojiMenu:
+                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                return
+            elif res.reaction.emoji == "⬅":
+                em = session.prev()
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+            elif res.reaction.emoji == "➡":
+                em = session.next()
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+            elif res.reaction.emoji == "❌":
+                await self.bot.delete_message(msg)
+                await self.bot.delete_message(ctx.message)
+                return
+
 class ServerInfo:
     def __init__(self):
         self.name = None
