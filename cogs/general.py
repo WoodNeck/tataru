@@ -6,44 +6,13 @@ import asyncio
 from random import randint
 from random import choice
 from pathlib import Path
-from cogs.utils.observable import Observable
 from dateutil.relativedelta import relativedelta
 
-class General(Observable):
+class General():
     def __init__(self, bot):
         self.bot = bot
-        self.bot.listenPublicMsg(self)
         self.military = MilitaryInfo()
         self.military.load()
-
-    async def update(self, message):
-        await self.checkGG2Bubble(message)
-
-    async def checkGG2Bubble(self, message):
-        content = message.content.lower()
-        length = len(content)
-        if content in ["센트리", "우버", 'e']:
-            with open("./data/gg2/{}.png".format(content), "rb") as f:
-                await self.bot.send_file(message.channel, f)
-        elif content == 'f':
-            taunt = "{}{}".format(content, randint(0, 9))
-            with open("./data/gg2/{}.png".format(taunt), "rb") as f:
-                await self.bot.send_file(message.channel, f)
-        elif 0 < length <= 3:
-            if content[0] in ['z', 'c', 'f']:
-                if length != 2:
-                    return
-                if 49 <= ord(content[1]) <= 57:
-                    with open("./data/gg2/{}.png".format(content), "rb") as f:
-                        await self.bot.send_file(message.channel, f)
-            elif content[0] == 'x':
-                try:
-                    num = int(content[1:])
-                    if 0 <= num <= 29:
-                        with open("./data/gg2/{}.png".format(content), "rb") as f:
-                            await self.bot.send_file(message.channel, f)
-                except:
-                    return
 
     @commands.command(hidden=True)
     async def 핑(self):
