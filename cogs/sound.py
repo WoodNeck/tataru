@@ -63,7 +63,7 @@ class Sound:
             return
         soundString = " ".join([arg for arg in args])
         if soundString == "목록":
-            self.printSoundList(ctx)      
+            await self.printSoundList(ctx)      
         else:        
             soundPath = "./data/sound/{}.mp3".format(soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
