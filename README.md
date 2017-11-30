@@ -31,6 +31,7 @@ sudo pip3 install Pillow
 sudo pip3 install python-dateutil
 sudo apt-get install libopus-dev
 sudo pip3 install pynacl
+sudo pip3 install youtube_dl
 sudo add-apt-repository ppa:mc3man/trusty-media
 sudo apt-get update
 sudo apt-get dist-upgrade
