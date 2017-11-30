@@ -27,6 +27,7 @@ git clone https://github.com/WoodNeck/tataru.git
 ```
 sudo apt-get install python3-pip
 sudo pip3 install discord
+sudo pip3 install requests
 sudo pip3 install Pillow
 sudo pip3 install python-dateutil
 sudo apt-get install libopus-dev
