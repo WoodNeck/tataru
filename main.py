@@ -8,7 +8,7 @@ from cogs.utils.botconfig import BotConfig
 from discord.ext import commands
 
 des = "타타루에용"
-prefix = "$"
+prefix = "타타루"
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
