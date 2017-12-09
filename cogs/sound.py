@@ -1,9 +1,13 @@
 import discord
 import asyncio
 import os
+import json
+import urllib
 from discord import opus
 from discord.ext import commands
+from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_player import MusicPlayer
+from cogs.utils.http_handler import HTTPHandler
 
 OPUS_LIBS = ['libopus-0.x86.dll', 'libopus-0.x64.dll', 'libopus-0.dll', 'libopus.so.0', 'libopus.0.dylib']
 
@@ -23,6 +27,7 @@ class Sound:
         self.bot = bot
         self.loop = bot.loop
         self.musicPlayers = dict()
+        self.youtubeKey = None
         load_opus_lib()
 
     async def joinVoice(self, ctx):
@@ -36,6 +41,7 @@ class Sound:
                     await voiceClient.move_to(voiceChannel)
                 return voiceClient
         except Exception as e:
+            print(e)
             await self.bot.send_message(ctx.message.channel, "먼저 보이스채널에 들어가주세용")
             return None
 
@@ -67,19 +73,54 @@ class Sound:
         else:        
             soundPath = "./data/sound/{}.mp3".format(soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
-                await self.play(ctx, soundPath)
+                await self.play(ctx, MusicPlayer.LOCAL, soundPath)
             else:
                 await self.bot.say("없는 사운드에용")
+    
+    @commands.command(pass_context=True)
+    async def 유튜브(self, ctx, *args):
+        if len(args) == 0:
+            await self.bot.say("검색어를 추가로 입력해주세용")
+            return
+        search = " ".join([arg for arg in args])
+        search = urllib.parse.quote(search)
+        youtubeUrl = "https://www.googleapis.com/youtube/v3/search" \
+                    "?part=snippet" \
+                    "&key={}" \
+                    "&order=viewCount" \
+                    "&q={}" \
+                    "&maxResults=10" \
+                    "&type=video".format(self.youtubeKey, search)
 
-    async def play(self, ctx, soundPath):
+        http = HTTPHandler()
+        response = http.get(youtubeUrl, None)
+        rescode = response.getcode()
+        if (rescode==200):
+            response_body = response.read()
+            response_body = json.loads(response_body)
+            print(response_body)
+            result = []
+            items = response_body["items"]
+            cnt = 1
+            for item in items:
+                result.append("`{}` {}({}) `{}`".format(cnt, item["snippet"]["title"], "https://youtu.be/{}".format(item["id"]["videoId"]), item["snippet"]["channelTitle"]))
+                cnt += 1
+            await self.bot.send_message(ctx.message.channel, "\n".join(result))
+        else:
+            await self.bot.say("오류가 발생했어용\n{}".format(response.read()))
+        
+        #await self.play(ctx, MusicPlayer.YOUTUBE, youtubeUrl)
+
+    async def play(self, ctx, dataType, song):
         voiceClient = await self.joinVoice(ctx)
         if voiceClient is not None:
             musicPlayer = self.musicPlayers.get(ctx.message.server.id)
             if not musicPlayer:
                 musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
-            musicPlayer.add(soundPath)
-            musicPlayer.play()
+            data = (dataType, song)
+            musicPlayer.add(data)
+            await musicPlayer.play()
     
     @commands.command(pass_context=True)
     async def 정지(self, ctx):
@@ -92,7 +133,7 @@ class Sound:
     async def 스킵(self, ctx):
         musicPlayer = self.musicPlayers.get(ctx.message.server.id)
         if musicPlayer:
-            musicPlayer.skip()
+            await musicPlayer.skip()
     
     async def printSoundList(self, ctx):
         soundList = []
@@ -105,4 +146,7 @@ class Sound:
 
 def setup(bot):
     cog = Sound(bot)
+    config = BotConfig()
+    cog.youtubeKey = config.request("Youtube", "API_KEY")
+    config.save()
     bot.add_cog(cog)

@@ -2,6 +2,8 @@ import asyncio
 from queue import Queue
 
 class MusicPlayer:
+    LOCAL = 0
+    YOUTUBE = 1
     def __init__(self, cog, voiceClient, server, channel):
         self.queue = Queue()
         self.cog = cog
@@ -10,29 +12,39 @@ class MusicPlayer:
         self.channel = channel
         self.player = None
     
-    def makePlayer(self, song):
-        self.player = self.voiceClient.create_ffmpeg_player(song, after=self.skip)
+    def makeLocalPlayer(self, song):
+        self.player = self.voiceClient.create_ffmpeg_player(song, after=self.afterPlay)
+    
+    async def makeYoutubePlayer(self, url):
+        self.player = await self.voiceClient.create_ytdl_player(url, after=self.afterPlay)
+        print("유튜브 다운로드 {}".format(url))
 
     def add(self, song):
         self.queue.put(song)
     
-    def play(self):
+    async def play(self):
         if self.shouldPlay():
             if not self.queue.empty():
-                song = self.queue.get_nowait()
-                self.makePlayer(song)
+                (dataType, song) = self.queue.get_nowait()
+                if dataType == MusicPlayer.LOCAL:
+                    self.makeLocalPlayer(song)
+                elif dataType == MusicPlayer.YOUTUBE:
+                    await self.makeYoutubePlayer(song)
                 self.player.start()
             else:
-                asyncio.run_coroutine_threadsafe(self.cog.leaveVoice(self.server), self.cog.loop)
+                await self.cog.leaveVoice(self.server)
     
     def stop(self):
         if self.player:
             self.player.stop()
             self.player = None
 
-    def skip(self):
+    async def skip(self):
         self.stop()
-        self.play()
+        await self.play()
+    
+    def afterPlay(self):
+        asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
 
     def shouldPlay(self):
         if not self.player:
