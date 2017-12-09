@@ -18,6 +18,10 @@ class General():
     async def 핑(self):
         await self.bot.say("퐁이에용")
 
+    @commands.command(hidden=True)
+    async def 파일관리(self):
+        await self.bot.say("http://ec2-13-125-72-67.ap-northeast-2.compute.amazonaws.com:8000/")
+
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number : int = 100):
         author = ctx.message.author
