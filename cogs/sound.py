@@ -28,6 +28,7 @@ class Sound:
         self.loop = bot.loop
         self.musicPlayers = dict()
         self.youtubeKey = None
+        self.SOUND_PATH = "./data/mutable/sound"
         load_opus_lib()
 
     async def joinVoice(self, ctx):
@@ -71,7 +72,7 @@ class Sound:
         if soundString == "목록":
             await self.printSoundList(ctx)      
         else:        
-            soundPath = "./data/sound/{}.mp3".format(soundString) # Only .mp3 file is allowed
+            soundPath = "{}/{}.mp3".format(self.SOUND_PATH, soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
                 await self.play(ctx, MusicPlayer.LOCAL, soundPath)
             else:

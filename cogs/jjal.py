@@ -1,54 +1,61 @@
 import discord
+import os
 from os import walk
 from random import randint
 from random import choice
 from discord.ext import commands
+from cogs.utils.observable import Observable
 
-class Jjal:
+class Jjal(Observable):
     def __init__(self, bot):
         self.bot = bot
-        self.kejang = []
-        for (dirpath, dirnames, filenames) in walk("./data/kejang"):
-            self.kejang.extend(filenames)
-            break
+        self.bot.listenPublicMsg(self)
+        self.IMAGE_PATH = "./data/mutable"
 
-        self.kejangList = []
-        cnt = 0
-        prefix = ("🔹", "🔸")
-        tempList = []
-        for name in self.kejang:
-            cnt += 1
-            toAppend = prefix[cnt % 2] + name.split(".")[0]
-            postfix = 0
-            for char in name:
-                if ord(char) < 128:
-                    postfix += 1
-            toAppend = "{:　<{width}}".format(toAppend, width=8)
-            toAppend += " " * postfix
-            tempList.append(toAppend)
-            if (len(tempList) == 4):
-                self.kejangList.append(tuple(tempList))
-                tempList.clear()
-        if (len(tempList)):
-            self.kejangList.append(tuple(tempList))
+    async def update(self, message):
+        await self.checkJjalCategory(message)
+    
+    async def checkJjalCategory(self, message):
+        if not message.content:
+            return
+        parsedMsg = message.content.split(' ')
+        if self.bot.prefix.startswith(parsedMsg[0]):
+            parsedMsg = parsedMsg[1:]
+        category = parsedMsg[0].lower()
+        if category == "sound":
+            return
+        if not os.path.isdir("{}/{}".format(self.IMAGE_PATH, category)):
+            return
 
-    @commands.command(pass_context=True)
-    async def 케장(self, ctx, args):
-        if (args == ""):
-            await self.bot.say("`케장콘 목록` 명령으로 목록을 확인할 수 있어용")
-        elif (args == "목록"):
-            desc = ""
-            for item in self.kejangList:
-                desc += "".join(item)
-                desc += "\n"
-            await self.bot.say("```가능한 케장콘 목록이에용\n{}```".format(desc))
-        else:
-            for name in self.kejang:
-                if name.split(".")[0] == args:
-                    with open("./data/kejang/{}".format(name), "rb") as f:
-                        await self.bot.send_file(ctx.message.channel, f)
-                        return
-            await self.bot.say("해당 케장콘이 목록에 존재하지 않아용")
+        imageName = " ".join(parsedMsg[1:])
+        if not imageName:
+            return
+        if imageName == "목록":
+            await self.printJjalList(message.channel, category)
+            return
+        if imageName == "랜덤":
+            await self.deployRandomImage(message.channel, category)
+            return
+
+        for image in os.listdir("{}/{}".format(self.IMAGE_PATH, category)):
+            if imageName == image.split('.')[0]:
+                await self.deployImage(message.channel, category, image)
+                return
+
+    async def deployImage(self, channel, category, image):
+        with open("{}/{}/{}".format(self.IMAGE_PATH, category, image), "rb") as f:
+            await self.bot.send_file(channel, f)
+    
+    async def deployRandomImage(self, channel, category):
+        imageList = os.listdir("{}/{}".format(self.IMAGE_PATH, category))
+        image = choice(imageList)
+        with open("{}/{}/{}".format(self.IMAGE_PATH, category, image), "rb") as f:
+            await self.bot.send_file(channel, f)
+    
+    async def printJjalList(self, channel, category):
+        imageList = os.listdir("{}/{}".format(self.IMAGE_PATH, category))
+        imageList = ["🔹" + image.split(".")[0] for image in imageList]
+        await self.bot.send_message(channel, "```{}```".format(" ".join(imageList)))
 
 def setup(bot):
     cog = Jjal(bot)
