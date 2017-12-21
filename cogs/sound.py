@@ -102,6 +102,8 @@ class Sound:
             print(response_body)
             result = []
             items = response_body["items"]
+            if not items:
+                await self.bot.send_message(ctx.message.channel, "검색 결과가 없어용")
             cnt = 1
             for item in items:
                 result.append("`{}` {}({}) `{}`".format(cnt, item["snippet"]["title"], "https://youtu.be/{}".format(item["id"]["videoId"]), item["snippet"]["channelTitle"]))

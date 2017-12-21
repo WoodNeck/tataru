@@ -20,6 +20,8 @@ class Google:
         url = "https://www.google.co.kr/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
         html = self.getHtml(url)
         images = self.findAllImages(html)
+        for image in images:
+            print(image)
         if not images:
             self.bot.say("검색 결과가 없어용")
             return
@@ -90,7 +92,13 @@ class Google:
             if item == "no_links":
                 break
             else:
-                items.append(item)
+                flag = False
+                possiblePostfix = [".jpg", ".png"]
+                for postfix in possiblePostfix:
+                    if item.lower().endswith(postfix):
+                        flag = True
+                if flag:
+                    items.append(item)
                 page = page[end_content:]
         return items
 
