@@ -97,7 +97,7 @@ class Sound:
         response = http.get(youtubeUrl, None)
         rescode = response.getcode()
         if (rescode==200):
-            response_body = response.read()
+            response_body = response.read().decode()
             response_body = json.loads(response_body)
             print(response_body)
             result = []
