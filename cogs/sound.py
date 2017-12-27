@@ -99,16 +99,13 @@ class Sound:
         if (rescode==200):
             response_body = response.read().decode()
             response_body = json.loads(response_body)
-            print(response_body)
             result = []
             items = response_body["items"]
             if not items:
                 await self.bot.send_message(ctx.message.channel, "검색 결과가 없어용")
-            cnt = 1
-            for item in items:
-                result.append("`{}` {}({}) `{}`".format(cnt, item["snippet"]["title"], "https://youtu.be/{}".format(item["id"]["videoId"]), item["snippet"]["channelTitle"]))
-                cnt += 1
-            await self.bot.send_message(ctx.message.channel, "\n".join(result))
+            else:
+                item = items[0]
+                await self.bot.send_message(ctx.message.channel, "https://youtu.be/{}".format(item["id"]["videoId"]))
         else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read()))
         
