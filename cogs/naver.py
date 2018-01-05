@@ -164,7 +164,7 @@ class Naver(Observable):
         EMOTION["surprised"] = "놀란"
         EMOTION["smile"] = "미소짓고 있는"
         EMOTION["talking"] = "말하고 있는"
-        GENDER = {"male": "남자", "female": "여자"}
+        GENDER = {"male": "남자", "female": "여자", "child": "어린애"}
 
         self.bot.send_typing(ctx.message.channel)
         tempDir = os.path.join(os.path.split(os.path.dirname(__file__))[0], "temp", "faceRecog.png")
@@ -202,7 +202,6 @@ class Naver(Observable):
                 em.add_field(name="성별", value="**{}**인 것 같아용!({:.1f}%)".format(GENDER[gender["value"]], 100*gender["confidence"]))
                 emotion = response_face["faces"][0]["emotion"]
                 em.add_field(name="감정", value="**{}** 것 같아용!({:.1f}%)".format(EMOTION[emotion["value"]], 100*emotion["confidence"]))
-
             await self.bot.send_message(ctx.message.channel, embed=em)
         else:
             if (rescode_face != 200):
