@@ -46,7 +46,7 @@ class General():
     @commands.command(pass_context=True)
     async def 따귀(self, ctx, arg):
         await self.bot.say("{}의 뺨을 후려갈겼어용".format(arg))
-
+        
     @commands.command(pass_context=True)
     async def 전역일(self, ctx, arg):
         if arg == "추가해줘":
@@ -257,7 +257,7 @@ class Military:
         return self.startDate
 
     def getDischargeDate(self):
-        return self.startDate + relativedelta(months=21, days=-1)
+        return self.startDate + relativedelta(months=18, days=-1)
 
     def getEmojiSet(self):
         return ("💖", "🖤")
