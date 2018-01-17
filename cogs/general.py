@@ -20,9 +20,11 @@ class General():
 
     @commands.command(hidden=True)
     async def 파일관리(self):
-        from json import load
-        from urllib.request import urlopen
-        ip = load(urlopen('https://api.ipify.org/?format=json').read().decode())['ip']
+        from urllib.request import Request, urlopen
+        request = Request("https://api.ipify.org/?format=json")
+        response = urlopen(request)
+        response_body = response.read().decode()
+        ip = json.loads(response_body)["ip"]
         await self.bot.say("http://{}:8000/".format(ip))
 
     @commands.command(pass_context=True)
