@@ -20,7 +20,7 @@ class General():
 
     @commands.command(hidden=True)
     async def 파일관리(self):
-        from urllib2 import urlopen
+        from urllib import urlopen
         my_ip = urlopen('http://ip.42.pl/raw').read()
         await self.bot.say("http://{}:8000/".format(my_ip))
 
