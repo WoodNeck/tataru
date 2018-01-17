@@ -22,7 +22,7 @@ class General():
     async def 파일관리(self):
         from json import load
         from urllib.request import urlopen
-        ip = load(urlopen('https://api.ipify.org/?format=json'))['ip']
+        ip = load(urlopen('https://api.ipify.org/?format=json').read().decode())['ip']
         await self.bot.say("http://{}:8000/".format(ip))
 
     @commands.command(pass_context=True)
