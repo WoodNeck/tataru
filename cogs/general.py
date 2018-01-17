@@ -20,9 +20,10 @@ class General():
 
     @commands.command(hidden=True)
     async def 파일관리(self):
+        from json import load
         from urllib.request import urlopen
-        my_ip = urlopen('http://ip.42.pl/raw').read()
-        await self.bot.say("http://{}:8000/".format(my_ip))
+        ip = load(urlopen('https://api.ipify.org/?format=json'))['ip']
+        await self.bot.say("http://{}:8000/".format(ip))
 
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number : int = 100):
