@@ -20,8 +20,9 @@ class General():
 
     @commands.command(hidden=True)
     async def 파일관리(self):
-        import socket
-        await self.bot.say("http://{}:8000/".format(socket.gethostbyname(socket.getfqdn())))
+        from urllib2 import urlopen
+        my_ip = urlopen('http://ip.42.pl/raw').read()
+        await self.bot.say("http://{}:8000/".format(my_ip)
 
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number : int = 100):
