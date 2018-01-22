@@ -25,9 +25,10 @@ class Jjal(Observable):
         if category == "sound":
             return
         if not os.path.isdir("{}/{}".format(self.IMAGE_PATH, category)):
-            return
-
-        imageName = " ".join(parsedMsg[1:])
+            category = "짤"
+            imageName = " ".join(parsedMsg[0:])
+        else:
+            imageName = " ".join(parsedMsg[1:])
         if not imageName:
             return
         if imageName == "목록":
