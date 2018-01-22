@@ -136,17 +136,10 @@ class Sound:
             await musicPlayer.skip()
     
     async def printSoundList(self, ctx):
-        soundList = []
-        for (dirpath, dirnames, filenames) in os.walk("./data/sound"):
-            soundList.extend(filenames)
-            break
-        soundList = ["🎶{}".format(sound.split(".")[0]) for sound in soundList]
-        desc = "\n".join(soundList)
-        await self.bot.send_message(ctx.message.channel, "```재생가능한 음성 목록이에용\n{}```".format(desc))
+        soundList = os.listdir("{}".format(self.SOUND_PATH))
+        soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
+        await self.bot.send_message(channel, "```{}```".format(" ".join(soundList)))
 
 def setup(bot):
     cog = Sound(bot)
-    config = BotConfig()
-    cog.youtubeKey = config.request("Youtube", "API_KEY")
-    config.save()
     bot.add_cog(cog)
