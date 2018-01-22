@@ -28,7 +28,9 @@ def load_opus_lib(opus_libs=OPUS_LIBS):
     raise RuntimeError("OPUS 라이브러리를 로드하는데 실패했어용. 이것들을 시도해봤어용: {}".format(", ".join(opus_libs)))
 
 class Sound:
+    instance = None
     def __init__(self, bot):
+        Sound.instance = self
         self.bot = bot
         self.loop = bot.loop
         self.musicPlayers = dict()

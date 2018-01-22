@@ -1,13 +1,17 @@
 import discord
 import os
 import json
+import time
 import urllib
 import requests
 from discord.ext import commands
+from .sound import Sound
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.observable import Observable
+from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.html_stripper import HTMLStripper
+
 
 class Naver(Observable):
     def __init__(self, bot):
@@ -221,7 +225,7 @@ class Naver(Observable):
         http = HTTPHandler()
         response = http.get(url, self.naverClient)
         rescode = response.getcode()
-        if (rescode==200):
+        if (rescode == 200):
             response_body = response.read().decode("utf-8")
             response_body = json.loads(response_body)
             if response_body["total"]:
@@ -233,6 +237,28 @@ class Naver(Observable):
                 await self.bot.say("검색결과가 없어용")
         else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read().decode("utf-8")))
+    
+    @commands.command(pass_context=True)        
+    async def tts(self, ctx, *args):
+        if len(args) == 0:
+            await self.bot.say("말할 내용을 추가로 입력해주세용")
+            return
+        tts = " ".join([arg for arg in args])
+        encText = urllib.parse.quote(tts)
+        data = "speaker=jinho&speed=0&text=" + encText;
+        url = "https://openapi.naver.com/v1/voice/tts.bin"
+
+        http = HTTPHandler()
+        response = http.post(url, self.naverClient, data)
+        rescode = response.getcode()
+        if(rescode == 200):
+            response_body = response.read()
+            millis = int(time.time() * 1000)
+            with open('./temp/{}_{}.mp3'.format(ctx.message.server.id, millis), 'wb') as f:
+                f.write(response_body)
+            await Sound.instance.play(ctx, MusicPlayer.TTS, './temp/{}_{}.mp3'.format(ctx.message.server.id, millis))
+        else:
+            self.bot.say("음성 다운로드에 실패했어용")
 
 def setup(bot):
     naver = Naver(bot)

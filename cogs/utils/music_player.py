@@ -1,9 +1,13 @@
 import asyncio
+import os
 from queue import Queue
 
 class MusicPlayer:
-    LOCAL = 0
-    YOUTUBE = 1
+    NULL = 0
+    LOCAL = 1
+    YOUTUBE = 2
+    TTS = 3
+
     def __init__(self, cog, voiceClient, server, channel):
         self.queue = Queue()
         self.cog = cog
@@ -11,6 +15,8 @@ class MusicPlayer:
         self.server = server
         self.channel = channel
         self.player = None
+        self.currentType = MusicPlayer.NULL
+        self.currentSong = None
     
     def makeLocalPlayer(self, song):
         self.player = self.voiceClient.create_ffmpeg_player(song, after=self.afterPlay)
@@ -22,21 +28,28 @@ class MusicPlayer:
         self.queue.put(song)
     
     async def play(self):
-        if self.shouldPlay():
-            if not self.queue.empty():
-                (dataType, song) = self.queue.get_nowait()
-                if dataType == MusicPlayer.LOCAL:
-                    self.makeLocalPlayer(song)
-                elif dataType == MusicPlayer.YOUTUBE:
-                    await self.makeYoutubePlayer(song)
-                self.player.start()
+        if not self.shouldPlay():
+            return
+        if not self.queue.empty():
+            (self.currentType, self.currentSong) = self.queue.get_nowait()
+            if self.currentType == MusicPlayer.LOCAL or self.currentType == MusicPlayer.TTS:
+                self.makeLocalPlayer(self.currentSong)
+            elif self.currentType == MusicPlayer.YOUTUBE:
+                await self.makeYoutubePlayer(self.currentSong)
             else:
-                await self.cog.leaveVoice(self.server)
+                print("MusicPlayer 재생시 dataType값이 범위 외: {}".format(self.currentType))
+            self.player.start()
+        else:
+            await self.cog.leaveVoice(self.server)
     
     def stop(self):
         if self.player:
             self.player.stop()
             self.player = None
+            if self.currentType == MusicPlayer.TTS:
+                os.remove(self.currentSong)
+            self.currentSong = None
+            self.currentType = MusicPlayer.NULL
 
     async def skip(self):
         self.stop()
