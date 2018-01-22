@@ -121,7 +121,7 @@ class Google:
         videos = []
         for video in _videos:
             url = video.find('a').get("href")
-            if not "user" in url and not "list" in url:
+            if not "user" in url and not "list" in url and not "channel" in url:
                 videos.append(self.parseVideo(video))
         if videos:
             session = Session()
