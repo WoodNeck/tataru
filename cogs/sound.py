@@ -1,10 +1,15 @@
 import discord
-import asyncio
 import os
+import sys
 import json
 import urllib
+import asyncio
+import platform
 from discord import opus
 from discord.ext import commands
+from selenium import webdriver
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from cogs.utils.session import Session
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
@@ -27,8 +32,13 @@ class Sound:
         self.bot = bot
         self.loop = bot.loop
         self.musicPlayers = dict()
-        self.youtubeKey = None
         self.SOUND_PATH = "./data/mutable/sound"
+        os.environ["MOZ_HEADLESS"] = '1'
+        if platform.system() == "Windows":
+            self.fireFoxBinary = FirefoxBinary('C:\\Program Files\\Mozilla Firefox\\firefox.exe', log_file=sys.stdout)
+        else:
+            self.fireFoxBinary = FirefoxBinary()
+        
         load_opus_lib()
 
     async def joinVoice(self, ctx):
@@ -83,33 +93,67 @@ class Sound:
         if len(args) == 0:
             await self.bot.say("검색어를 추가로 입력해주세용")
             return
-        search = " ".join([arg for arg in args])
-        search = urllib.parse.quote(search)
-        youtubeUrl = "https://www.googleapis.com/youtube/v3/search" \
-                    "?part=snippet" \
-                    "&key={}" \
-                    "&order=viewCount" \
-                    "&q={}" \
-                    "&maxResults=10" \
-                    "&type=video".format(self.youtubeKey, search)
+        await self.bot.send_typing(ctx.message.channel)
+        searchText = " ".join([arg for arg in args])
+        searchText = urllib.parse.quote(searchText)
+        youtubeUrl = "https://www.youtube.com/results?search_query={}".format(searchText)
 
-        http = HTTPHandler()
-        response = http.get(youtubeUrl, None)
-        rescode = response.getcode()
-        if (rescode==200):
-            response_body = response.read().decode()
-            response_body = json.loads(response_body)
-            result = []
-            items = response_body["items"]
-            if not items:
-                await self.bot.send_message(ctx.message.channel, "검색 결과가 없어용")
-            else:
-                item = items[0]
-                await self.bot.send_message(ctx.message.channel, "https://youtu.be/{}".format(item["id"]["videoId"]))
+        driver = webdriver.Firefox(firefox_binary=self.fireFoxBinary)
+        driver.get(youtubeUrl)
+        videos = driver.find_elements_by_tag_name("ytd-video-renderer")
+        if videos:
+            session = Session()
+            session.set(videos)
+            video = session.first()
+            description = self.videoDesc(video, session)
+            msg = await self.bot.send_message(ctx.message.channel, description)
+
+            emojiMenu = ["⬅", "▶", "➡", "❌"]
+            for emoji in emojiMenu:
+                await self.bot.add_reaction(msg, emoji)
+
+            while True:
+                res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+                if not res:
+                    for emoji in emojiMenu:
+                        await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                        await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                    break
+                elif res.reaction.emoji == "⬅":
+                    video = session.prev()
+                    description = self.videoDesc(video, session)
+                    await self.bot.edit_message(msg, description)
+                    await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+                elif res.reaction.emoji == "➡":
+                    video = session.next()
+                    description = self.videoDesc(video, session)
+                    await self.bot.edit_message(msg, description)
+                    await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+                elif res.reaction.emoji == "▶":
+                    video = session.current()
+                    (title, url, time) = self.parseVideo(video)
+                    await self.bot.send_typing(ctx.message.channel)
+                    await self.bot.delete_message(msg)
+                    await self.bot.delete_message(ctx.message)
+                    await self.play(ctx, MusicPlayer.YOUTUBE, url)
+                    await self.bot.send_message(ctx.message.channel, "**{}**를 재생해용 `{}`".format(title, time))
+                    break
+                elif res.reaction.emoji == "❌":
+                    await self.bot.delete_message(msg)
+                    await self.bot.delete_message(ctx.message)
+                    break
         else:
-            await self.bot.say("오류가 발생했어용\n{}".format(response.read()))
-        
-        #await self.play(ctx, MusicPlayer.YOUTUBE, youtubeUrl)
+            await self.bot.say("검색 결과가 없어용")
+        driver.close()
+    
+    def videoDesc(self, video, session):
+        (title, url, time) = self.parseVideo(video)
+        return "{} `{}/{}`".format(url, session.index() + 1, session.count())
+    
+    def parseVideo(self, video):
+        time = video.find_element_by_tag_name("ytd-thumbnail-overlay-time-status-renderer").find_element_by_tag_name("span").text
+        tag = video.find_element_by_id("video-title")
+        return (tag.text, "{}".format(tag.get_attribute("href")), time)
 
     async def play(self, ctx, dataType, song):
         voiceClient = await self.joinVoice(ctx)

@@ -1,6 +1,7 @@
 import discord
 import urllib
 from discord.ext import commands
+from cogs.utils.session import Session
 from cogs.utils.http_handler import HTTPHandler
 
 class Google:
@@ -20,18 +21,16 @@ class Google:
         url = "https://www.google.co.kr/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
         html = self.getHtml(url)
         images = self.findAllImages(html)
-        for image in images:
-            print(image)
         if not images:
             self.bot.say("검색 결과가 없어용")
             return
-        session = ImageSession()
+        session = Session()
         session.set(images)
         image = session.first()
         
         em = discord.Embed(colour=0xDEADBF)
         em.set_image(url=image)
-        em.set_footer(text="{}/{}".format(session.current(), session.count()))
+        em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
         msg = await self.bot.send_message(ctx.message.channel, embed=em)
 
         emojiMenu = ["⬅", "➡", "❌"]
@@ -48,13 +47,13 @@ class Google:
             elif res.reaction.emoji == "⬅":
                 image = session.prev()
                 em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.current(), session.count()))
+                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
                 await self.bot.edit_message(msg, embed=em)
                 await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
             elif res.reaction.emoji == "➡":
                 image = session.next()
                 em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.current(), session.count()))
+                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
                 await self.bot.edit_message(msg, embed=em)
                 await self.bot.remove_reaction(msg, "➡", ctx.message.author)
             elif res.reaction.emoji == "❌":
@@ -101,38 +100,6 @@ class Google:
                     items.append(item)
                 page = page[end_content:]
         return items
-
-class ImageSession:
-    def __init__(self):
-        self.index = 0
-        self.pages = None
-
-    def set(self, pages):
-        self.pages = pages
-    
-    def first(self):
-        self.index = 0
-        return self.pages[self.index]
-
-    def prev(self):
-        if self.index > 0:
-            self.index -= 1
-        else:
-            self.index = len(self.pages) - 1
-        return self.pages[self.index]
-    
-    def next(self):
-        if self.index < len(self.pages) - 1:
-            self.index += 1
-        else:
-            self.index = 0
-        return self.pages[self.index]
-    
-    def current(self):
-        return self.index + 1
-    
-    def count(self):
-        return len(self.pages)
 
 def setup(bot):
     cog = Google(bot)

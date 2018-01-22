@@ -24,7 +24,7 @@ class Naver(Observable):
         if len(args) == 0:
             await self.bot.say("검색할 내용을 추가로 입력해주세용")
             return
-        self.bot.send_typing(ctx.message.channel)
+        await self.bot.send_typing(ctx.message.channel)
         search = "".join([arg for arg in args])
         encText = urllib.parse.quote(search.encode("utf-8"))
         url = "https://openapi.naver.com/v1/search/kin.json?query={}".format(encText)
@@ -132,7 +132,7 @@ class Naver(Observable):
     @commands.command(pass_context=True)
     async def 로마자변환(self, ctx, args):
         if len(args) <= 10:
-            self.bot.send_typing(ctx.message.channel)
+            await self.bot.send_typing(ctx.message.channel)
             encText = urllib.parse.quote(args)
             url = "https://openapi.naver.com/v1/krdict/romanization?query=" + encText
 
@@ -166,7 +166,7 @@ class Naver(Observable):
         EMOTION["talking"] = "말하고 있는"
         GENDER = {"male": "남자", "female": "여자", "child": "어린애"}
 
-        self.bot.send_typing(ctx.message.channel)
+        await self.bot.send_typing(ctx.message.channel)
         tempDir = os.path.join(os.path.split(os.path.dirname(__file__))[0], "temp", "faceRecog.png")
 
         url_face = "https://openapi.naver.com/v1/vision/face"
@@ -213,7 +213,7 @@ class Naver(Observable):
 
     @commands.command(pass_context=True)
     async def 네이버이미지(self, ctx, *args):
-        self.bot.send_typing(ctx.message.channel)
+        await self.bot.send_typing(ctx.message.channel)
         searchText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(searchText)
         url = "https://openapi.naver.com/v1/search/image?query=" + encText
