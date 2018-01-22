@@ -99,7 +99,7 @@ class Sound:
         youtubeUrl = "https://www.youtube.com/results?search_query={}".format(searchText)
 
         driver = webdriver.Firefox(firefox_binary=self.fireFoxBinary)
-        driver.implicitly_wait(3)
+        driver.implicitly_wait(1)
         try:
             driver.get(youtubeUrl)
             videos = driver.find_elements_by_tag_name("ytd-video-renderer")

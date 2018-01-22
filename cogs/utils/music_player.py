@@ -17,7 +17,6 @@ class MusicPlayer:
     
     async def makeYoutubePlayer(self, url):
         self.player = await self.voiceClient.create_ytdl_player(url, after=self.afterPlay)
-        print("유튜브 다운로드 {}".format(url))
 
     def add(self, song):
         self.queue.put(song)
