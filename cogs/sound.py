@@ -138,7 +138,7 @@ class Sound:
                         await self.bot.delete_message(msg)
                         await self.bot.delete_message(ctx.message)
                         await self.play(ctx, MusicPlayer.YOUTUBE, url)
-                        await self.bot.send_message(ctx.message.channel, "**{}**를 재생해용 `{}`".format(title, time))
+                        await self.bot.send_message(ctx.message.channel, "**{}**을(를) 재생해용 `{}`".format(title, time))
                         break
                     elif res.reaction.emoji == "❌":
                         await self.bot.delete_message(msg)
