@@ -1,8 +1,11 @@
 import discord
 import urllib
 from discord.ext import commands
+from .sound import Sound
 from cogs.utils.session import Session
+from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
+from bs4 import BeautifulSoup
 
 class Google:
     def __init__(self, bot):
@@ -18,7 +21,7 @@ class Google:
         self.bot.send_typing(ctx.message.channel)
         searchText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(searchText.encode('utf-8'))
-        url = "https://www.google.co.kr/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
+        url = "https://m.youtube.com/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
         html = self.getHtml(url)
         images = self.findAllImages(html)
         if not images:
@@ -100,6 +103,82 @@ class Google:
                     items.append(item)
                 page = page[end_content:]
         return items
+
+    @commands.command(pass_context=True)
+    async def 유튜브(self, ctx, *args):
+        if len(args) == 0:
+            await self.bot.say("검색어를 추가로 입력해주세용")
+            return
+        await self.bot.send_typing(ctx.message.channel)
+        searchText = " ".join([arg for arg in args])
+        searchText = urllib.parse.quote(searchText)
+        youtubeUrl = "https://www.youtube.com/results?search_query={}".format(searchText)
+
+        http = HTTPHandler()
+        response = http.get(youtubeUrl, self.headers)
+        html = BeautifulSoup(response.read().decode(), 'html.parser')
+        _videos = html.find_all("div", {"class": "yt-lockup-content"})
+        videos = []
+        for video in _videos:
+            url = video.find('a').get("href")
+            if not "user" in url and not "list" in url:
+                videos.append(self.parseVideo(video))
+        if videos:
+            session = Session()
+            session.set(videos)
+            video = session.first()
+            description = self.videoDesc(video, session)
+            msg = await self.bot.send_message(ctx.message.channel, description)
+
+            emojiMenu = ["⬅", "▶", "➡", "❌"]
+            for emoji in emojiMenu:
+                await self.bot.add_reaction(msg, emoji)
+
+            while True:
+                res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+                if not res:
+                    for emoji in emojiMenu:
+                        await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                        await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                    return
+                elif res.reaction.emoji == "⬅":
+                    video = session.prev()
+                    description = self.videoDesc(video, session)
+                    await self.bot.edit_message(msg, description)
+                    await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+                elif res.reaction.emoji == "➡":
+                    video = session.next()
+                    description = self.videoDesc(video, session)
+                    await self.bot.edit_message(msg, description)
+                    await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+                elif res.reaction.emoji == "▶":
+                    video = session.current()
+                    await self.bot.send_typing(ctx.message.channel)
+                    await self.bot.delete_message(msg)
+                    await self.bot.delete_message(ctx.message)
+                    if await Sound.instance.play(ctx, MusicPlayer.YOUTUBE, video.url):
+                        await self.bot.send_message(ctx.message.channel, "**{}**을(를) 재생해용 `{}`".format(video.title, video.time))
+                    return
+                elif res.reaction.emoji == "❌":
+                    await self.bot.delete_message(msg)
+                    await self.bot.delete_message(ctx.message)
+                    return
+        else:
+            await self.bot.say("검색 결과가 없어용")
+
+    def videoDesc(self, video, session):
+        return "{} `{}/{}`".format(video.url, session.index() + 1, session.count())
+    
+    def parseVideo(self, video):
+        time = video.find("span").string.lstrip("- 길이: ")
+        tag = video.find('a')
+        return Video(tag.get("title"), "https://www.youtube.com{}".format(tag.get("href")), time)
+
+class Video:
+    def __init__(self, title, url, time):
+        self.title = title
+        self.url = url
+        self.time = time
 
 def setup(bot):
     cog = Google(bot)
