@@ -99,52 +99,57 @@ class Sound:
         youtubeUrl = "https://www.youtube.com/results?search_query={}".format(searchText)
 
         driver = webdriver.Firefox(firefox_binary=self.fireFoxBinary)
-        driver.get(youtubeUrl)
-        videos = driver.find_elements_by_tag_name("ytd-video-renderer")
-        if videos:
-            session = Session()
-            session.set(videos)
-            video = session.first()
-            description = self.videoDesc(video, session)
-            msg = await self.bot.send_message(ctx.message.channel, description)
+        driver.implicitly_wait(3)
+        try:
+            driver.get(youtubeUrl)
+            videos = driver.find_elements_by_tag_name("ytd-video-renderer")
+            if videos:
+                session = Session()
+                session.set(videos)
+                video = session.first()
+                description = self.videoDesc(video, session)
+                msg = await self.bot.send_message(ctx.message.channel, description)
 
-            emojiMenu = ["⬅", "▶", "➡", "❌"]
-            for emoji in emojiMenu:
-                await self.bot.add_reaction(msg, emoji)
+                emojiMenu = ["⬅", "▶", "➡", "❌"]
+                for emoji in emojiMenu:
+                    await self.bot.add_reaction(msg, emoji)
 
-            while True:
-                res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-                if not res:
-                    for emoji in emojiMenu:
-                        await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                        await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                    break
-                elif res.reaction.emoji == "⬅":
-                    video = session.prev()
-                    description = self.videoDesc(video, session)
-                    await self.bot.edit_message(msg, description)
-                    await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-                elif res.reaction.emoji == "➡":
-                    video = session.next()
-                    description = self.videoDesc(video, session)
-                    await self.bot.edit_message(msg, description)
-                    await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-                elif res.reaction.emoji == "▶":
-                    video = session.current()
-                    (title, url, time) = self.parseVideo(video)
-                    await self.bot.send_typing(ctx.message.channel)
-                    await self.bot.delete_message(msg)
-                    await self.bot.delete_message(ctx.message)
-                    await self.play(ctx, MusicPlayer.YOUTUBE, url)
-                    await self.bot.send_message(ctx.message.channel, "**{}**를 재생해용 `{}`".format(title, time))
-                    break
-                elif res.reaction.emoji == "❌":
-                    await self.bot.delete_message(msg)
-                    await self.bot.delete_message(ctx.message)
-                    break
-        else:
-            await self.bot.say("검색 결과가 없어용")
-        driver.close()
+                while True:
+                    res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+                    if not res:
+                        for emoji in emojiMenu:
+                            await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                            await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                        break
+                    elif res.reaction.emoji == "⬅":
+                        video = session.prev()
+                        description = self.videoDesc(video, session)
+                        await self.bot.edit_message(msg, description)
+                        await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+                    elif res.reaction.emoji == "➡":
+                        video = session.next()
+                        description = self.videoDesc(video, session)
+                        await self.bot.edit_message(msg, description)
+                        await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+                    elif res.reaction.emoji == "▶":
+                        video = session.current()
+                        (title, url, time) = self.parseVideo(video)
+                        await self.bot.send_typing(ctx.message.channel)
+                        await self.bot.delete_message(msg)
+                        await self.bot.delete_message(ctx.message)
+                        await self.play(ctx, MusicPlayer.YOUTUBE, url)
+                        await self.bot.send_message(ctx.message.channel, "**{}**를 재생해용 `{}`".format(title, time))
+                        break
+                    elif res.reaction.emoji == "❌":
+                        await self.bot.delete_message(msg)
+                        await self.bot.delete_message(ctx.message)
+                        break
+            else:
+                await self.bot.say("검색 결과가 없어용")
+        except Exception as e:
+            await self.bot.say("오류가 발생했어용: {}".format(e))
+        finally:
+            driver.close()
     
     def videoDesc(self, video, session):
         (title, url, time) = self.parseVideo(video)
