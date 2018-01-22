@@ -18,10 +18,10 @@ class Google:
 
     @commands.command(pass_context=True)  
     async def 이미지(self, ctx, *args):
-        self.bot.send_typing(ctx.message.channel)
+        await self.bot.send_typing(ctx.message.channel)
         searchText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(searchText.encode('utf-8'))
-        url = "https://m.youtube.com/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
+        url = "https://www.google.co.kr/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
         html = self.getHtml(url)
         images = self.findAllImages(html)
         if not images:
@@ -121,7 +121,7 @@ class Google:
         videos = []
         for video in _videos:
             url = video.find('a').get("href")
-            if not "user" in url and not "list" in url and not "channel" in url:
+            if not "user" in url and not "list" in url and not "channel" in url and not "googleads" in url:
                 videos.append(self.parseVideo(video))
         if videos:
             session = Session()
