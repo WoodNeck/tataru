@@ -194,7 +194,7 @@ class General():
         for emoji in optionEmojis:
             await self.bot.add_reaction(msg, emoji)
         
-        await asyncio.sleep(30)
+        await asyncio.sleep(60)
 
         msg = await self.bot.get_message(ctx.message.channel, msg.id)
 
