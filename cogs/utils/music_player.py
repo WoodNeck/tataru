@@ -52,6 +52,14 @@ class MusicPlayer:
         self.stop()
         await self.play()
     
+    async def skipIndex(self, ctx, index):
+        if 0 <= index <= len(self.queue.list) - 1:
+            song = self.queue.list.pop(index)
+            await self.cog.bot.send_message(ctx.message.channel, "{}를 재생목록에서 제외했어용".format(song.desc()))
+        else:
+            await self.cog.bot.send_message(ctx.message.channel, "재생목록의 범위를 넘어섰어용")
+            return
+    
     async def printSongList(self, channel):
         if self.queue.empty():
             await self.cog.bot.send_message(channel, "큐가 비어있어용")
@@ -63,14 +71,9 @@ class MusicPlayer:
                 cnt += 1
             await self.cog.bot.send_message(channel, "\n".join(desc))
     
-    async def printCurrentSong(self, channel):
-        if self.currentSong == None:
-            await self.cog.bot.send_message(channel, "재생중인 곡이 없어용")
-        else:
-            await self.cog.bot.send_message(channel, self.currentSong.desc())
-    
     def afterPlay(self):
         if self.player.is_done():
+            print("재생이 끝났어용")
             asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
         
     def shouldPlay(self):

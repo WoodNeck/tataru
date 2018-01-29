@@ -51,14 +51,14 @@ class Sound:
             return None
 
     async def leaveVoice(self, server):
-        voiceClient = self.bot.voice_client_in(server)
-        if voiceClient:
-            voiceChannel = voiceClient.channel
-            await voiceClient.disconnect()
         player = self.musicPlayers.get(server.id)
         if player:
             player.stop()
             self.musicPlayers.pop(server.id)
+        voiceClient = self.bot.voice_client_in(server)
+        if voiceClient:
+            voiceChannel = voiceClient.channel
+            await voiceClient.disconnect()
 
     @commands.command(pass_context=True)
     async def 들어와(self, ctx):
@@ -108,6 +108,18 @@ class Sound:
         if musicPlayer:
             await musicPlayer.skip()
     
+    @commands.command(pass_context=True)
+    async def 취소(self, ctx, index):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if not musicPlayer:
+            return
+        try:
+            index = int(index) - 1
+        except:
+            self.bot.say("재생목록의 몇번째인지 숫자를 입력해주세용")
+            return
+        await musicPlayer.skipIndex(ctx, index)
+    
     async def printSoundList(self, ctx):
         soundList = os.listdir("{}".format(self.SOUND_PATH))
         soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
@@ -122,8 +134,10 @@ class Sound:
     @commands.command(pass_context=True)
     async def 현재곡(self, ctx):
         musicPlayer = self.musicPlayers.get(ctx.message.server.id)
-        if musicPlayer:
-            await musicPlayer.printCurrentSong(ctx.message.channel)
+        if musicPlayer and musicPlayer.currentSong is not None:
+            await self.bot.say(musicPlayer.currentSong.desc())
+        else:
+            await self.bot.say("재생중인 곡이 없어용")
 
 def setup(bot):
     cog = Sound(bot)
