@@ -34,7 +34,7 @@ class MusicPlayer:
             else:
                 print("MusicPlayer 재생시 dataType값이 범위 외: {}".format(self.currentType))
                 return
-            songDesc = self.makeSongDesc(self.currentSong)
+            songDesc = "{}을(를) 재생해용".format(self.currentSong.desc())
             await self.cog.bot.send_message(self.channel, songDesc)
             self.player.start()
         else:
@@ -52,6 +52,23 @@ class MusicPlayer:
         self.stop()
         await self.play()
     
+    async def printSongList(self, channel):
+        if self.queue.empty():
+            await self.cog.bot.send_message(channel, "큐가 비어있어용")
+        else:
+            desc = []
+            cnt = 1
+            for song in self.queue.list:
+                desc.append("`{}`. {}".format(cnt, song.desc()))
+                cnt += 1
+            await self.cog.bot.send_message(channel, "\n".join(desc))
+    
+    async def printCurrentSong(self, channel):
+        if self.currentSong == None:
+            await self.cog.bot.send_message(channel, "재생중인 곡이 없어용")
+        else:
+            await self.cog.bot.send_message(channel, self.currentSong.desc())
+    
     def afterPlay(self):
         if self.player.is_done():
             asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
@@ -62,9 +79,3 @@ class MusicPlayer:
         if not self.player.is_playing():
             return True
         return False
-
-    def makeSongDesc(self, song):
-        if song.length is not None:
-            return "{} **{}**을(를) 재생해용 `[{}]`".format(MusicType.toEmoji(song.type), song.name, song.length)
-        else:
-            return "{} **{}**을(를) 재생해용".format(MusicType.toEmoji(song.type), song.name)

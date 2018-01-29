@@ -92,7 +92,7 @@ class Sound:
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
             song = Music(dataType, fileDir, name, ctx.message.author, length)
             musicPlayer.add(song)
-            await self.bot.say("{} **{}**를 재생목록에 추가했어용".format(MusicType.toEmoji(dataType), name))
+            await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             await musicPlayer.play()
     
     @commands.command(pass_context=True)
@@ -112,6 +112,18 @@ class Sound:
         soundList = os.listdir("{}".format(self.SOUND_PATH))
         soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
         await self.bot.send_message(channel, "```{}```".format(" ".join(soundList)))
+    
+    @commands.command(pass_context=True)
+    async def 재생목록(self, ctx):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if musicPlayer:
+            await musicPlayer.printSongList(ctx.message.channel)
+    
+    @commands.command(pass_context=True)
+    async def 현재곡(self, ctx):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if musicPlayer:
+            await musicPlayer.printCurrentSong(ctx.message.channel)
 
 def setup(bot):
     cog = Sound(bot)

@@ -111,7 +111,7 @@ class DangerousInviteGame(Observable):
 
     def endGame(self):
         self.bot.dropPublicMsg(self)
-        DangerousInvite.instance.games.pop(self.initChannel.id)
+        DangerousInvite.instance.games.pop(self.initServer.id)
 
     async def timeOut(self, time):
         await asyncio.sleep(time)

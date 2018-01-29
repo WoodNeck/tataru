@@ -1,15 +1,15 @@
 class MusicQueue:
     def __init__(self):
-        self.queue = []
+        self.list = []
     
     def enqueue(self, obj):
-        self.queue.append(obj)
+        self.list.append(obj)
     
     def dequeue(self):
-        if (len(self.queue) > 0):
-            return self.queue.pop(0)
+        if (len(self.list) > 0):
+            return self.list.pop(0)
         else:
             return None
     
     def empty(self):
-        return (len(self.queue) <= 0)
+        return (len(self.list) <= 0)
