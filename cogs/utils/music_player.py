@@ -1,43 +1,41 @@
 import asyncio
 import os
-from queue import Queue
+from .music_type import MusicType
+from .music_queue import MusicQueue
 
 class MusicPlayer:
-    NULL = 0
-    LOCAL = 1
-    YOUTUBE = 2
-    TTS = 3
-
     def __init__(self, cog, voiceClient, server, channel):
-        self.queue = Queue()
+        self.queue = MusicQueue()
         self.cog = cog
         self.voiceClient = voiceClient
         self.server = server
         self.channel = channel
         self.player = None
-        self.currentType = MusicPlayer.NULL
         self.currentSong = None
     
-    def makeLocalPlayer(self, song):
-        self.player = self.voiceClient.create_ffmpeg_player(song, after=self.afterPlay)
+    def makeLocalPlayer(self, fileDir):
+        self.player = self.voiceClient.create_ffmpeg_player(fileDir, after=self.afterPlay)
     
     async def makeYoutubePlayer(self, url):
         self.player = await self.voiceClient.create_ytdl_player(url, after=self.afterPlay)
 
     def add(self, song):
-        self.queue.put(song)
+        self.queue.enqueue(song)
     
     async def play(self):
         if not self.shouldPlay():
             return
-        if not self.queue.empty():
-            (self.currentType, self.currentSong) = self.queue.get_nowait()
-            if self.currentType == MusicPlayer.LOCAL or self.currentType == MusicPlayer.TTS:
-                self.makeLocalPlayer(self.currentSong)
-            elif self.currentType == MusicPlayer.YOUTUBE:
-                await self.makeYoutubePlayer(self.currentSong)
+        self.currentSong = self.queue.dequeue()
+        if self.currentSong is not None:
+            if self.currentSong.type == MusicType.LOCAL or self.currentSong.type == MusicType.TTS:
+                self.makeLocalPlayer(self.currentSong.dir)
+            elif self.currentSong.type == MusicType.YOUTUBE:
+                await self.makeYoutubePlayer(self.currentSong.dir)
             else:
                 print("MusicPlayer 재생시 dataType값이 범위 외: {}".format(self.currentType))
+                return
+            songDesc = self.makeSongDesc(self.currentSong)
+            await self.cog.bot.send_message(self.channel, songDesc)
             self.player.start()
         else:
             await self.cog.leaveVoice(self.server)
@@ -46,21 +44,27 @@ class MusicPlayer:
         if self.player:
             self.player.stop()
             self.player = None
-            if self.currentType == MusicPlayer.TTS:
-                os.remove(self.currentSong)
+            if self.currentSong.type == MusicType.TTS:
+                os.remove(self.currentSong.dir)
             self.currentSong = None
-            self.currentType = MusicPlayer.NULL
 
     async def skip(self):
         self.stop()
         await self.play()
     
     def afterPlay(self):
-        asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
-
+        if self.player.is_done():
+            asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
+        
     def shouldPlay(self):
         if not self.player:
             return True
         if not self.player.is_playing():
             return True
         return False
+
+    def makeSongDesc(self, song):
+        if song.length is not None:
+            return "{} **{}**을(를) 재생해용 `[{}]`".format(MusicType.toEmoji(song.type), song.name, song.length)
+        else:
+            return "{} **{}**을(를) 재생해용".format(MusicType.toEmoji(song.type), song.name)

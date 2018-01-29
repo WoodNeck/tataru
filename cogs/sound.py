@@ -5,6 +5,8 @@ import urllib
 import asyncio
 from discord import opus
 from discord.ext import commands
+from cogs.utils.music import Music
+from cogs.utils.music_type import MusicType
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
@@ -55,6 +57,7 @@ class Sound:
             await voiceClient.disconnect()
         player = self.musicPlayers.get(server.id)
         if player:
+            player.stop()
             self.musicPlayers.pop(server.id)
 
     @commands.command(pass_context=True)
@@ -76,23 +79,21 @@ class Sound:
         else:        
             soundPath = "{}/{}.mp3".format(self.SOUND_PATH, soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
-                await self.play(ctx, MusicPlayer.LOCAL, soundPath)
+                await self.play(ctx, MusicType.LOCAL, soundPath, soundString)
             else:
                 await self.bot.say("없는 사운드에용")
 
-    async def play(self, ctx, dataType, song):
+    async def play(self, ctx, dataType, fileDir, name, length=None):
         voiceClient = await self.joinVoice(ctx)
         if voiceClient is not None:
             musicPlayer = self.musicPlayers.get(ctx.message.server.id)
             if not musicPlayer:
                 musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
-            data = (dataType, song)
-            musicPlayer.add(data)
+            song = Music(dataType, fileDir, name, ctx.message.author, length)
+            musicPlayer.add(song)
+            await self.bot.say("{} **{}**를 재생목록에 추가했어용".format(MusicType.toEmoji(dataType), name))
             await musicPlayer.play()
-            return True
-        else:
-            return False
     
     @commands.command(pass_context=True)
     async def 정지(self, ctx):

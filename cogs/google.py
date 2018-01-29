@@ -3,6 +3,7 @@ import urllib
 from discord.ext import commands
 from .sound import Sound
 from cogs.utils.session import Session
+from cogs.utils.music_type import MusicType
 from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
 from bs4 import BeautifulSoup
@@ -19,6 +20,9 @@ class Google:
     @commands.command(pass_context=True)  
     async def 이미지(self, ctx, *args):
         await self.bot.send_typing(ctx.message.channel)
+        if len(args) == 0:
+            await self.bot.say("검색어를 추가로 입력해주세용")
+            return
         searchText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(searchText.encode('utf-8'))
         url = "https://www.google.co.kr/search?q={}&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg".format(encText)
@@ -156,8 +160,7 @@ class Google:
                     await self.bot.send_typing(ctx.message.channel)
                     await self.bot.delete_message(msg)
                     await self.bot.delete_message(ctx.message)
-                    if await Sound.instance.play(ctx, MusicPlayer.YOUTUBE, video.url):
-                        await self.bot.send_message(ctx.message.channel, "**{}**을(를) 재생해용 `{}`".format(video.title, video.time))
+                    await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.title, video.time)
                     return
                 elif res.reaction.emoji == "❌":
                     await self.bot.delete_message(msg)

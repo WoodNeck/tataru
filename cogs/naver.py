@@ -8,6 +8,7 @@ from discord.ext import commands
 from .sound import Sound
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.observable import Observable
+from cogs.utils.music_type import MusicType
 from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.html_stripper import HTMLStripper
@@ -243,8 +244,8 @@ class Naver(Observable):
         if len(args) == 0:
             await self.bot.say("말할 내용을 추가로 입력해주세용")
             return
-        tts = " ".join([arg for arg in args])
-        encText = urllib.parse.quote(tts)
+        ttsText = " ".join([arg for arg in args])
+        encText = urllib.parse.quote(ttsText)
         data = "speaker=jinho&speed=0&text=" + encText;
         url = "https://openapi.naver.com/v1/voice/tts.bin"
 
@@ -254,9 +255,10 @@ class Naver(Observable):
         if(rescode == 200):
             response_body = response.read()
             millis = int(time.time() * 1000)
-            with open('./temp/{}_{}.mp3'.format(ctx.message.server.id, millis), 'wb') as f:
+            fileDir = './temp/{}_{}.mp3'.format(ctx.message.server.id, millis)
+            with open(fileDir, 'wb') as f:
                 f.write(response_body)
-            await Sound.instance.play(ctx, MusicPlayer.TTS, './temp/{}_{}.mp3'.format(ctx.message.server.id, millis))
+            await Sound.instance.play(ctx, MusicType.TTS, fileDir, ttsText)
         else:
             self.bot.say("음성 다운로드에 실패했어용")
 
