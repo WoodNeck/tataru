@@ -170,7 +170,7 @@ class Google:
             await self.bot.say("검색 결과가 없어용")
 
     def videoDesc(self, video, session):
-        return "{} `{}/{}`".format(video.url, session.index() + 1, session.count())
+        return "`{}/{}` {} `[{}]`".format(session.index() + 1, session.count(), video.url, video.time)
     
     def parseVideo(self, video):
         time = video.find("span").string.lstrip("- 길이: ")

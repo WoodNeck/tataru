@@ -1,11 +1,15 @@
 import discord
-from discord.ext import commands
 import json
-import datetime
+import urllib
 import asyncio
-from random import randint
-from random import choice
+import datetime
+from discord.ext import commands
+from cogs.utils.session import Session
+from cogs.utils.http_handler import HTTPHandler
 from pathlib import Path
+from random import choice
+from random import randint
+from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 
 class General():
@@ -206,6 +210,19 @@ class General():
             optionCnt += 1
 
         await self.bot.send_message(ctx.message.channel, embed=result)
+    
+    @commands.command(pass_context=True)
+    async def 나무위키(self, ctx, *args):
+        searchText = " ".join([arg for arg in args])
+        encText = urllib.parse.quote(searchText.encode("utf-8"))
+        url = "https://namu.wiki/w/{}".format(encText)
+        http = HTTPHandler()
+        response = http.get(url, None)
+        html = BeautifulSoup(response.read().decode(), 'html.parser')
+        title = html.find("h1", {"class": "title"}).find('a').string
+        em = discord.Embed(title=title, url=url, colour=0xDEADBF)
+        print(title)
+
 
 class MilitaryInfo:
     def __init__(self):

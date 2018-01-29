@@ -91,8 +91,9 @@ class Sound:
                 musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
             song = Music(dataType, fileDir, name, ctx.message.author, length)
+            if not musicPlayer.queue.empty():
+                await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             musicPlayer.add(song)
-            await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             await musicPlayer.play()
     
     @commands.command(pass_context=True)
