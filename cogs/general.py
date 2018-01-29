@@ -6,11 +6,11 @@ import datetime
 from discord.ext import commands
 from cogs.utils.session import Session
 from cogs.utils.http_handler import HTTPHandler
+from cogs.utils.military_info import *
 from pathlib import Path
 from random import choice
 from random import randint
 from bs4 import BeautifulSoup
-from dateutil.relativedelta import relativedelta
 
 class General():
     def __init__(self, bot):
@@ -146,7 +146,6 @@ class General():
             else:
                 await self.bot.say("셋 중에 하나를 입력해주세용")
 
-
     @commands.command(pass_context=True)
     async def 수능(self, ctx):
         dday = datetime.date(2017, 11, 23)
@@ -213,102 +212,111 @@ class General():
     
     @commands.command(pass_context=True)
     async def 나무위키(self, ctx, *args):
+        await self.bot.send_typing(ctx.message.channel)
         searchText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(searchText.encode("utf-8"))
         url = "https://namu.wiki/w/{}".format(encText)
         http = HTTPHandler()
-        response = http.get(url, None)
-        html = BeautifulSoup(response.read().decode(), 'html.parser')
-        title = html.find("h1", {"class": "title"}).find('a').string
-        em = discord.Embed(title=title, url=url, colour=0xDEADBF)
-        print(title)
-
-
-class MilitaryInfo:
-    def __init__(self):
-        self.path = "military_info.json"
-        self.servers = dict()
-    
-    def setData(self, serverId, key, value):
-        targetServer = self.servers.get(serverId)
-        if not targetServer:
-            targetServer = dict()
-            self.servers[serverId] = targetServer
-        targetServer[key] = value
-        self.save()
-
-    def load(self):
-        file = Path(self.path)
-        if not file.is_file():
+        try:
+            response = http.get(url, None)
+        except:
+            await self.bot.say("문서가 존재하지 않아용")
             return
-        with open(self.path) as info:
-            encodedDict = json.load(info)
-            for serverHash in encodedDict:
-                serverInfo = encodedDict[serverHash]
-                self.servers[serverHash] = dict()
-                server = self.servers[serverHash]
-                for name in serverInfo:
-                    personInfo = serverInfo[name]
-                    encodedDate = personInfo["startDate"]
-                    encodedDate = [int(i) for i in encodedDate.split("/")]
-                    encodedDate = datetime.date(encodedDate[0], encodedDate[1], encodedDate[2])
-                    if personInfo["class"] == "Military":
-                        server[name] = Military(encodedDate)
-                    elif personInfo["class"] == "Airforce":
-                        server[name] = Airforce(encodedDate)
-                    elif personInfo["class"] == "PublicService":
-                        server[name] = PublicService(encodedDate)
+        
+        html = BeautifulSoup(response.read().decode(), 'html.parser')
+        content = html.find("article")
+        for br in content.find_all("br"):
+            br.replace_with("\n")
+        for delete in content.find_all("del"):
+            delete.string = "~~{}~~".format(delete.get_text())
+        title = content.find("h1", {"class": "title"}).find('a').string
 
-    def save(self):
-        f = open(self.path, "w")
-        infoToDump = {}
-        for serverId in self.servers:
-            serverInfo = self.servers[serverId]
-            serverDump = {}
-            infoToDump[serverId] = serverDump
-            for name in serverInfo:
-                serverDump[name] = serverInfo[name].encode()
-        f.write(json.dumps(infoToDump))
-        f.close()
+        items = content.find_all('', {"class": "wiki-heading"})
+        indexes = [item.find('a').string.rstrip('.') for item in items]
+        items = [item.get_text().rstrip("[편집]") for item in items]
+        descs = content.find_all("div", {"class": "wiki-heading-content"})
+        for desc in descs:
+            for ul in desc.find_all("ul", recursive=False):
+                self.sanitizeUl(ul)
 
-class Military:
-    def __init__(self, startDate):
-        self.startDate = startDate
+        articles = []
+        prev_article = content.find("div", {"class": "wiki-inner-content"})
+        for article in prev_article.find_all("p", recursive=False):
+            print(article)
+            if article.name == "p":
+                if article.find("div"):
+                    break
+                desc = article.get_text()[:2000]
+                if desc:
+                    articles.append(NamuArticle("", "", desc))
+            elif article.name == "ul":
+                self.sanitizeUl(article)
+                desc = article.get_text()[:2000]
+                if desc:
+                    articles.append(NamuArticle("", "", desc))
+        for i in range(len(items)):
+            desc = descs[i].get_text()[:2000]
+            if desc:
+                articles.append(NamuArticle(indexes[i], items[i], desc))
+
+        if not articles:
+            await self.bot.say("문서가 존재하지 않아용")
+            return
+
+        session = Session()
+        session.set(articles)
+        article = session.first()
+        em = discord.Embed(title=title, url="{}#s-{}".format(url, article.index), colour=0xDEADBF)
+        em.description = article.desc
+        em.set_footer(text=article.title)
+        msg = await self.bot.send_message(ctx.message.channel, embed=em)
+
+        emojiMenu = ["⬅", "➡", "❌"]
+        for emoji in emojiMenu:
+            await self.bot.add_reaction(msg, emoji)
+
+        while True:
+            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+            if not res:
+                for emoji in emojiMenu:
+                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                return
+            elif res.reaction.emoji == "⬅":
+                article = session.prev()
+                em.set_footer(text=article.title)
+                em.url = "{}#s-{}".format(url, article.index)
+                em.description = article.desc
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+            elif res.reaction.emoji == "➡":
+                article = session.next()
+                em.set_footer(text=article.title)
+                em.url = "{}#s-{}".format(url, article.index)
+                em.description = article.desc
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+            elif res.reaction.emoji == "❌":
+                await self.bot.delete_message(msg)
+                await self.bot.delete_message(ctx.message)
+                return
     
-    def getStartDate(self):
-        return self.startDate
+    def sanitizeUl(self, ul, depth = 0):
+        for li in ul.find_all("li"):
+            self.sanitizeLi(li, depth)
+        ul.string = "{}".format(ul.get_text())
 
-    def getDischargeDate(self):
-        return self.startDate + relativedelta(months=18, days=-1)
+    def sanitizeLi(self, li, depth = 0):
+        icon = ["●", "○", "■"]
+        for ul in li.find_all("ul"):
+            self.sanitizeUl(ul, depth + 1)
+        li.string = "\n{}{} {}".format("　"*depth, icon[depth % 3], li.get_text())
 
-    def getEmojiSet(self):
-        return ("💖", "🖤")
-    
-    def getSymbol(self):
-        return "🔫"
-
-    def encode(self):
-        return {"class": "Military", "startDate": self.startDate.strftime("%Y/%m/%d")}
-
-class Airforce(Military):
-    def getDischargeDate(self):
-        return self.startDate + relativedelta(months=24, days=-1)
-
-    def getEmojiSet(self):
-        return ("🏇", "🐎")
-
-    def getSymbol(self):
-        return "✈️"
-    
-    def encode(self):
-        return {"class": "Airforce", "startDate": self.startDate.strftime("%Y/%m/%d")}
-
-class PublicService(Military):
-    def getEmojiSet(self):
-        return ("💖", "🖤")
-
-    def encode(self):
-        return {"class": "PublicService", "startDate": self.startDate.strftime("%Y/%m/%d")}
+class NamuArticle:
+    def __init__(self, index, title, desc):
+        self.index = index
+        self.title = title
+        self.desc = desc
 
 def setup(bot):
     general = General(bot)
