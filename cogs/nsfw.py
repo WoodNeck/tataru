@@ -23,7 +23,7 @@ class NSFW():
         http = HTTPHandler()
         try:
             response = http.get(url, None)
-        except:
+        except Exception as e:
             await self.bot.say("페이지가 존재하지 않아용")
             return
         html = BeautifulSoup(response.read().decode(), 'html.parser')
@@ -43,11 +43,13 @@ class NSFW():
                 infoResults.append(self.getAllMetaInfo(info.find_all("td")[1]))
             else:
                 infoResults.append(self.getMetaInfo(info.find_all("td")[1]))
+        print(infoResults)
         em = discord.Embed(title=title, url=url, colour=0xDEADBF)
         em.set_image(url=coverUrl)
         em.add_field(name="Artist", value=artist)
-        for i in range(len(infoTypes)):
+        for i in range(len(infoTypes) - 2):
             em.add_field(name=infoTypes[i], value=infoResults[i])
+        em.description = "Tags\n{}".format(infoResults[-1])
 
         msg = await self.bot.send_message(ctx.message.channel, embed=em)
         emojiMenu = ["▶", "❌"]
