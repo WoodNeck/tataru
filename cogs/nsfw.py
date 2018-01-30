@@ -43,16 +43,20 @@ class NSFW():
                 infoResults.append(self.getAllMetaInfo(info.find_all("td")[1]))
             else:
                 infoResults.append(self.getMetaInfo(info.find_all("td")[1]))
-        print(infoResults)
         em = discord.Embed(title=title, url=url, colour=0xDEADBF)
         em.set_image(url=coverUrl)
         em.add_field(name="Artist", value=artist)
-        for i in range(len(infoTypes) - 2):
+        for i in range(len(infoTypes) - 1):
             em.add_field(name=infoTypes[i], value=infoResults[i])
         em.description = "Tags\n{}".format(infoResults[-1])
 
         msg = await self.bot.send_message(ctx.message.channel, embed=em)
-        emojiMenu = ["▶", "❌"]
+
+        # Check Type
+        if infoResults[1] == "anime":
+            emojiMenu = ["❌"]
+        else:
+            emojiMenu = ["▶", "❌"]
         for emoji in emojiMenu:
             await self.bot.add_reaction(msg, emoji)
 
@@ -84,7 +88,11 @@ class NSFW():
     
     async def readHitomi(self, author, channel, index, imageCnt, em):
         page = 1
-        url = "https://aa.hitomi.la/galleries/{}/{}.jpg"
+        if index % 2:
+            url = "https://ba.hitomi.la/galleries/{}/{}.jpg"
+        else:
+            url = "https://aa.hitomi.la/galleries/{}/{}.jpg"
+        print(url)
         em.set_image(url=url.format(index, page))
         em.set_footer(text="{}/{}".format(page, imageCnt))
         
@@ -130,7 +138,7 @@ class NSFW():
         else:
             string = meta.string
             if not string:
-                string = ""
+                string = "N/A"
             return string.strip()
     
     def getAllMetaInfo(self, meta):
@@ -143,7 +151,7 @@ class NSFW():
         else:
             string = meta.string
             if not string:
-                string = ""
+                string = "N/A"
             return string.strip()
 
     async def alertOnlyInNSFW(self, channel):

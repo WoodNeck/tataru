@@ -10,6 +10,3 @@ class MusicQueue:
             return self.list.pop(0)
         else:
             return None
-    
-    def empty(self):
-        return (len(self.list) <= 0)

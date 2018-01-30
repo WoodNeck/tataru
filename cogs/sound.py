@@ -86,12 +86,13 @@ class Sound:
     async def play(self, ctx, dataType, fileDir, name, length=None):
         voiceClient = await self.joinVoice(ctx)
         if voiceClient is not None:
+            await self.bot.send_typing(ctx.message.channel)
             musicPlayer = self.musicPlayers.get(ctx.message.server.id)
             if not musicPlayer:
                 musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
             song = Music(dataType, fileDir, name, ctx.message.author, length)
-            if not musicPlayer.queue.empty():
+            if musicPlayer.currentSong != None:
                 await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             musicPlayer.add(song)
             await musicPlayer.play()

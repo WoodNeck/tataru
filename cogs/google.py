@@ -157,7 +157,6 @@ class Google:
                     await self.bot.remove_reaction(msg, "➡", ctx.message.author)
                 elif res.reaction.emoji == "▶":
                     video = session.current()
-                    await self.bot.send_typing(ctx.message.channel)
                     await self.bot.delete_message(msg)
                     await self.bot.delete_message(ctx.message)
                     await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.title, video.time)
