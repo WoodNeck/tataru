@@ -29,15 +29,20 @@ class DangerousInvite:
 
     @commands.command(pass_context=True)
     async def 위험한초대(self, ctx):
-        if not self.games.get(ctx.message.server.id) is None:
+        if self.games.get(ctx.message.server.id) == None:
             await self.bot.say("{}에 의해 게임은 이미 시작되었어용".format(self.games[ctx.message.server.id].initUser.mention))
-        else:
-            if (ctx.message.channel.type != discord.ChannelType.private):
-                newGame = DangerousInviteGame(self.bot, ctx.message.server, ctx.message.author, ctx.message.channel)
-                self.games[ctx.message.server.id] = newGame
-                await self.bot.send_message(ctx.message.author, "3글자의 금지단어를 말해주세용")
-                await self.bot.add_reaction(ctx.message, "👍")
-                self.bot.listenPrivateMsg(newGame)
+            return
+        if (ctx.message.channel.type == discord.ChannelType.private):
+            return
+        try:
+            await self.bot.send_message(ctx.message.author, "3글자의 금지단어를 말해주세용")
+            await self.bot.add_reaction(ctx.message, "👍")
+            newGame = DangerousInviteGame(self.bot, ctx.message.server, ctx.message.author, ctx.message.channel)
+            self.games[ctx.message.server.id] = newGame
+            self.bot.listenPrivateMsg(newGame)
+        except:
+            await self.bot.say("메시지를 보낼 권한이 없어용")
+            return
 
 class DangerousInviteGame(Observable):
     def __init__(self, bot, server, user, channel):
