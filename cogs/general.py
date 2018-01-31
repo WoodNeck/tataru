@@ -162,9 +162,6 @@ class General():
 
     @commands.command(pass_context=True)
     async def 투표(self, ctx, *args):
-        """
-            Usage: `타타루` `투표` `질문` `(옵션1)` `(옵션2)` `...`
-        """
         args = [arg for arg in args]
         if not len(args):
             self.bot.say("`타타루` `투표` `질문` `(옵션1)` `(옵션2)` `...`순으로 입력해주세용")
@@ -214,8 +211,11 @@ class General():
     async def 나무위키(self, ctx, *args):
         await self.bot.send_typing(ctx.message.channel)
         searchText = " ".join([arg for arg in args])
-        encText = urllib.parse.quote(searchText.encode("utf-8"))
-        url = "https://namu.wiki/w/{}".format(encText)
+        if searchText == "랜덤":
+            url = "https://namu.wiki/random"
+        else:
+            encText = urllib.parse.quote(searchText.encode("utf-8"))
+            url = "https://namu.wiki/w/{}".format(encText)
         http = HTTPHandler()
         try:
             response = http.get(url, None)
