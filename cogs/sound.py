@@ -125,7 +125,7 @@ class Sound:
     async def printSoundList(self, ctx):
         soundList = os.listdir("{}".format(self.SOUND_PATH))
         soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
-        await self.bot.send_message(channel, "```{}```".format(" ".join(soundList)))
+        await self.bot.send_message(ctx.message.channel, "```{}```".format(" ".join(soundList)))
     
     @commands.command(pass_context=True)
     async def 재생목록(self, ctx):
