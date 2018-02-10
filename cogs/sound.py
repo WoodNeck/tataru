@@ -30,9 +30,9 @@ class Sound:
         Sound.instance = self
         self.bot = bot
         self.loop = bot.loop
+        self.lock = asyncio.Lock()
         self.musicPlayers = dict()
         self.SOUND_PATH = "./data/mutable/sound"
-        
         load_opus_lib()
 
     async def joinVoice(self, ctx):
@@ -46,7 +46,6 @@ class Sound:
                     await voiceClient.move_to(voiceChannel)
                 return voiceClient
         except Exception as e:
-            print(e)
             await self.bot.send_message(ctx.message.channel, "먼저 보이스채널에 들어가주세용")
             return None
 
@@ -75,7 +74,7 @@ class Sound:
             return
         soundString = " ".join([arg for arg in args])
         if soundString == "목록":
-            await self.printSoundList(ctx)      
+            await self.printSoundList(ctx.message.channel)      
         else:        
             soundPath = "{}/{}.mp3".format(self.SOUND_PATH, soundString) # Only .mp3 file is allowed
             if os.path.exists(soundPath):
@@ -84,6 +83,7 @@ class Sound:
                 await self.bot.say("없는 사운드에용")
 
     async def play(self, ctx, dataType, fileDir, name, length=None):
+        await self.lock.acquire()
         voiceClient = await self.joinVoice(ctx)
         if voiceClient is not None:
             await self.bot.send_typing(ctx.message.channel)
@@ -96,6 +96,7 @@ class Sound:
                 await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             musicPlayer.add(song)
             await musicPlayer.play()
+        self.lock.release()
     
     @commands.command(pass_context=True)
     async def 정지(self, ctx):
@@ -122,10 +123,10 @@ class Sound:
             return
         await musicPlayer.skipIndex(ctx, index)
     
-    async def printSoundList(self, ctx):
+    async def printSoundList(self, channel):
         soundList = os.listdir("{}".format(self.SOUND_PATH))
         soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
-        await self.bot.send_message(ctx.message.channel, "```{}```".format(" ".join(soundList)))
+        await self.bot.send_message(channel, "```{}```".format(" ".join(soundList)))
     
     @commands.command(pass_context=True)
     async def 재생목록(self, ctx):
