@@ -70,7 +70,7 @@ class MusicPlayer:
             for song in self.queue.list:
                 desc.append("`{}`. {}".format(cnt, song.desc()))
                 cnt += 1
-            await self.cog.bot.send_message(channel, "\n".join(desc))
+            await self.cog.bot.send_message(channel, "\n".join(desc)[:2000])
     
     def afterPlay(self):
         if self.loop:

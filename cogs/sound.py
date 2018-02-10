@@ -7,7 +7,6 @@ from discord import opus
 from discord.ext import commands
 from cogs.utils.music import Music
 from cogs.utils.music_type import MusicType
-from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
 
@@ -96,6 +95,22 @@ class Sound:
                 await self.bot.say("{}을(를) 재생목록에 추가했어용".format(song.desc()))
             musicPlayer.add(song)
             await musicPlayer.play()
+        self.lock.release()
+    
+    async def addList(self, ctx, dataType, videos):
+        await self.lock.acquire()
+        voiceClient = await self.joinVoice(ctx)
+        if voiceClient is not None:
+            await self.bot.send_typing(ctx.message.channel)
+            musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+            if not musicPlayer:
+                musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
+                self.musicPlayers[ctx.message.server.id] = musicPlayer
+            for video in videos:
+                song = Music(dataType, video[1], video[0], ctx.message.author, None)
+                musicPlayer.add(song)
+            await musicPlayer.play()
+            await self.bot.send_message(ctx.message.channel, "{}개의 재생목록을 추가했어용".format(len(videos)))
         self.lock.release()
     
     @commands.command(pass_context=True)
