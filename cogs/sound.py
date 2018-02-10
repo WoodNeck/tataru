@@ -148,9 +148,9 @@ class Sound:
         if musicPlayer:
             musicPlayer.loop = not musicPlayer.loop
             if musicPlayer.loop == False:
-                await.self.bot.say("루프를 해제했어용")
+                await self.bot.say("루프를 해제했어용")
             else:
-                await.self.bot.say("루프를 설정했어용")
+                await self.bot.say("루프를 설정했어용")
 
 def setup(bot):
     cog = Sound(bot)
