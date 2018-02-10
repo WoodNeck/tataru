@@ -12,6 +12,7 @@ class MusicPlayer:
         self.channel = channel
         self.player = None
         self.currentSong = None
+        self.loop = False
     
     def makeLocalPlayer(self, fileDir):
         self.player = self.voiceClient.create_ffmpeg_player(fileDir, after=self.afterPlay)
@@ -72,6 +73,8 @@ class MusicPlayer:
             await self.cog.bot.send_message(channel, "\n".join(desc))
     
     def afterPlay(self):
+        if self.loop:
+            self.queue.enqueue(self.currentSong)
         if self.player.is_done():
             asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
         

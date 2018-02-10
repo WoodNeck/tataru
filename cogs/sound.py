@@ -141,6 +141,16 @@ class Sound:
         else:
             await self.bot.say("재생중인 곡이 없어용")
 
+    @commands.command(pass_context=True)
+    async def 루프(self, ctx):
+        musicPlayer = self.musicPlayers.get(ctx.message.server.id)
+        if musicPlayer:
+            musicPlayer.loop = not musicPlayer.loop
+            if musicPlayer.loop == False:
+                await.self.bot.say("루프를 해제했어용")
+            else:
+                await.self.bot.say("루프를 설정했어용")
+
 def setup(bot):
     cog = Sound(bot)
     bot.add_cog(cog)
