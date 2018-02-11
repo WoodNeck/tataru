@@ -86,7 +86,7 @@ class MusicPlayer:
                 total = self.player.duration
             else:
                 return
-            percentage = int(current * 10 / total + 0.5) #round
+            percentage = int(current * 10 / total)
             progress = "🎧"
             for i in range(10):
                 if i == percentage:
