@@ -153,7 +153,7 @@ class Sound:
     async def 현재곡(self, ctx):
         musicPlayer = self.musicPlayers.get(ctx.message.server.id)
         if musicPlayer and musicPlayer.currentSong is not None:
-            await self.bot.say(musicPlayer.currentSong.desc())
+            await musicPlayer.displayCurrentStatus(ctx.message.channel)
         else:
             await self.bot.say("재생중인 곡이 없어용")
 

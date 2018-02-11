@@ -1,5 +1,8 @@
-import asyncio
 import os
+import time
+import asyncio
+import discord
+import subprocess
 from .music_type import MusicType
 from .music_queue import MusicQueue
 
@@ -72,6 +75,39 @@ class MusicPlayer:
                 cnt += 1
             await self.cog.bot.send_message(channel, "\n".join(desc)[:2000])
     
+    async def displayCurrentStatus(self, channel):
+        if self.player:
+            current = int(time.time() - self.player._start)
+            if self.currentSong.type == MusicType.LOCAL or self.currentSong.type == MusicType.TTS:
+                cmd = 'ffprobe -i {} -show_entries format=duration -v quiet -of csv="p=0"'.format(self.currentSong.dir)
+                result = subprocess.check_output(cmd).decode("UTF-8").rstrip()
+                total = int(eval(result))
+            elif self.currentSong.type == MusicType.YOUTUBE:
+                total = self.player.duration
+            else:
+                return
+            percentage = int(current * 10 / total + 0.5) #round
+            progress = "🎧"
+            for i in range(10):
+                if i == percentage:
+                    progress += "💿"
+                else:
+                    progress += "▪️"
+            title = "{} **{}**".format(MusicType.toEmoji(self.currentSong.type), self.currentSong.name)
+            progress += "`[{}/{}]`".format(self.parseTime(current), self.parseTime(total))
+            em = discord.Embed(title=title, description=progress, colour=0xDEADBF)
+            em.set_footer(text=self.currentSong.user.display_name, icon_url=self.currentSong.user.avatar_url)
+            await self.cog.bot.send_message(channel, embed=em)
+                
+    def parseTime(self, time):
+        timeHour = time // 3600
+        timeMin = time // 60
+        timeSec = time % 60
+        if timeHour > 0:
+            return "{}:{:0>2}:{:0>2}".format(timeHour, timeMin, timeSec)
+        else:
+            return "{:0>2}:{:0>2}".format(timeMin, timeSec)
+
     def afterPlay(self):
         if self.loop:
             self.queue.enqueue(self.currentSong)
