@@ -79,7 +79,7 @@ class MusicPlayer:
         if self.player:
             current = int(time.time() - self.player._start)
             if self.currentSong.type == MusicType.LOCAL or self.currentSong.type == MusicType.TTS:
-                cmd = 'ffprobe -i {} -show_entries format=duration -v quiet -of csv="p=0"'.format(self.currentSong.dir)
+                cmd = 'ffprobe -i \"{}\" -show_entries format=duration -v quiet -of csv="p=0"'.format(self.currentSong.dir)
                 result = subprocess.check_output(cmd, shell=True).decode("UTF-8").rstrip()
                 total = int(eval(result))
             elif self.currentSong.type == MusicType.YOUTUBE:
