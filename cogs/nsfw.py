@@ -1,6 +1,7 @@
 import discord
 import functools
 from discord.ext import commands
+from cogs.utils.session import Session
 from cogs.utils.http_handler import HTTPHandler
 from bs4 import BeautifulSoup
 
@@ -75,26 +76,33 @@ class NSFW():
             http = HTTPHandler()
             response = http.get(url, None)
             html = BeautifulSoup(response.read().decode(), 'html.parser')
-            imageCnt = len(html.find_all("div", {"class": "img-url"}))
+            images = html.find_all("div", {"class": "img-url"})
             reader = discord.Embed(colour=0xDEADBF)
             reader.title = em.title
             reader.url = em.url
-            await self.readHitomi(author, channel, index, imageCnt, reader)
+            await self.readHitomi(author, channel, index, images, reader)
             return
         elif res.reaction.emoji == "❌":
             await self.bot.delete_message(msg)
             await self.bot.delete_message(ctx.message)
             return
     
-    async def readHitomi(self, author, channel, index, imageCnt, em):
-        page = 1
+    async def readHitomi(self, author, channel, index, images, em):
+        images = [image.string for image in images]
+        images = [image[image.rfind("/")+1:] for image in images]
+        imageCnt = len(images)
+
+        session = Session()
+        session.set(images)
+
         if index % 2:
-            url = "https://ba.hitomi.la/galleries/{}/{}.jpg"
+            url = "https://ba.hitomi.la/galleries/{}/{}"
         else:
-            url = "https://aa.hitomi.la/galleries/{}/{}.jpg"
-        print(url)
-        em.set_image(url=url.format(index, page))
-        em.set_footer(text="{}/{}".format(page, imageCnt))
+            url = "https://aa.hitomi.la/galleries/{}/{}"
+        
+        image = session.first()
+        em.set_image(url=url.format(index, image))
+        em.set_footer(text="{}/{}".format(session.index() + 1, imageCnt))
         
         msg = await self.bot.send_message(channel, embed=em)
         emojiMenu = ["⬅", "➡", "❌"]
@@ -109,19 +117,15 @@ class NSFW():
                     await self.bot.remove_reaction(msg, emoji, author)
                 return
             elif res.reaction.emoji == "⬅":
-                page -= 1
-                if page < 1:
-                    page = imageCnt
-                em.set_image(url=url.format(index, page))
-                em.set_footer(text="{}/{}".format(page, imageCnt))
+                image = session.prev()
+                em.set_image(url=url.format(index, image))
+                em.set_footer(text="{}/{}".format(session.index() + 1, imageCnt))
                 await self.bot.edit_message(msg, embed=em)
                 await self.bot.remove_reaction(msg, "⬅", author)
             elif res.reaction.emoji == "➡":
-                page += 1
-                if page > imageCnt:
-                    page = 1
-                em.set_image(url=url.format(index, page))
-                em.set_footer(text="{}/{}".format(page, imageCnt))
+                image = session.next()
+                em.set_image(url=url.format(index, image))
+                em.set_footer(text="{}/{}".format(session.index() + 1, imageCnt))
                 await self.bot.edit_message(msg, embed=em)
                 await self.bot.remove_reaction(msg, "➡", author)
             elif res.reaction.emoji == "❌":
