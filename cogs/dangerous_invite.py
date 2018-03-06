@@ -18,7 +18,7 @@ class DangerousInvite:
         self.bot = bot
         DangerousInvite.instance = self
         self.games = dict()
-        self.errorMsg = "아쉽게도 킥하지 못했서용, 킥할 권한이 없거나 킥할 인간이 서버주인 것 가타용"
+        self.errorMsg = "아쉽게도 킥하지 못했서용, 킥할 권한이 없거나 킥할 인간이 서버주인 것 같아용"
 
         image_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "data/dinvite"))
         self.baseImage = Image.open("{}/dinvite.jpg".format(image_path))
@@ -29,15 +29,20 @@ class DangerousInvite:
 
     @commands.command(pass_context=True)
     async def 위험한초대(self, ctx):
-        if not self.games.get(ctx.message.server) is None:
-            await self.bot.say("{}에 의해 게임은 이미 시작되었어용".format(self.games[ctx.message.server].initUser.mention))
+        if not self.games.get(ctx.message.server.id) is None:
+            await self.bot.say("{}에 의해 게임은 이미 시작되었어용".format(self.games[ctx.message.server.id].initUser.mention))
         else:
-            if (ctx.message.channel.type != discord.ChannelType.private):
-                newGame = DangerousInviteGame(self.bot, ctx.message.server, ctx.message.author, ctx.message.channel)
-                self.games[ctx.message.server] = newGame
+            if (ctx.message.channel.type == discord.ChannelType.private):
+                return
+            try:
                 await self.bot.send_message(ctx.message.author, "3글자의 금지단어를 말해주세용")
                 await self.bot.add_reaction(ctx.message, "👍")
+                newGame = DangerousInviteGame(self.bot, ctx.message.server, ctx.message.author, ctx.message.channel)
+                self.games[ctx.message.server.id] = newGame
                 self.bot.listenPrivateMsg(newGame)
+            except:
+                await self.bot.say("메시지를 보낼 권한이 없어용")
+                return
 
 class DangerousInviteGame(Observable):
     def __init__(self, bot, server, user, channel):
@@ -49,6 +54,13 @@ class DangerousInviteGame(Observable):
         self.isTimeOut = True
         self.targetWord = None
         self.loop = None
+        asyncio.run_coroutine_threadsafe(self.checkStarted(60), self.bot.loop)
+    
+    async def checkStarted(self, time):
+        await asyncio.sleep(time)
+        if not self.started:
+            self.endGame()
+            await self.bot.send_message(self.initChannel, "{}님 {}초 안에 DM으로 3글자의 메시지를 보내주세용".format(self.initUser.mention, time))
     
     async def update(self, message):
         if not self.started:
@@ -56,7 +68,7 @@ class DangerousInviteGame(Observable):
                 await self.bot.send_message(message.author, "3글자로 입력해주세용")
             else:
                 await self.start(message.content)
-                await self.bot.send_message(self.initChannel, "{}의 위험한 초대가 시작되었어용".format(self.initUser.mention))
+                await self.bot.send_message(self.initChannel, "{}의 위험한 초대가 시작되었어용!".format(self.initUser.mention))
         else:
             if self.targetWord in message.content:
                 await self.gotTargetMessage(message)
@@ -68,8 +80,7 @@ class DangerousInviteGame(Observable):
         self.bot.dropPrivateMsg(self)
         self.bot.listenPublicMsg(self)
         print("위험한초대가 {}에 의해 {}:{}에서 새로 생성되었어용. 금칙어는 {}(이)에용".format(self.initUser.mention, self.initServer, self.initChannel, self.targetWord))
-        self.loop = asyncio.get_event_loop()
-        asyncio.run_coroutine_threadsafe(self.timeOut(86400), self.loop)
+        asyncio.run_coroutine_threadsafe(self.timeOut(86400), self.bot.loop)
 
     async def gotTargetMessage(self, message):
         self.isTimeOut = False
@@ -110,8 +121,9 @@ class DangerousInviteGame(Observable):
         self.endGame()
 
     def endGame(self):
+        self.bot.dropPrivateMsg(self)
         self.bot.dropPublicMsg(self)
-        DangerousInvite.instance.games.pop(self.initChannel.id)
+        DangerousInvite.instance.games.pop(self.initServer.id)
 
     async def timeOut(self, time):
         await asyncio.sleep(time)

@@ -112,3 +112,6 @@ military_info.json
 
 # codes not used
 obsolete/
+
+# data files
+data/mutable

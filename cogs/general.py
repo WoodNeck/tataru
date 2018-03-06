@@ -1,52 +1,35 @@
 import discord
-from discord.ext import commands
 import json
+import urllib
+import asyncio
 import datetime
-from random import randint
-from random import choice
+from discord.ext import commands
+from cogs.utils.session import Session
+from cogs.utils.http_handler import HTTPHandler
+from cogs.utils.military_info import *
 from pathlib import Path
-from cogs.utils.observable import Observable
-from dateutil.relativedelta import relativedelta
+from random import choice
+from random import randint
+from bs4 import BeautifulSoup
 
-class General(Observable):
+class General():
     def __init__(self, bot):
         self.bot = bot
-        self.bot.listenPublicMsg(self)
         self.military = MilitaryInfo()
         self.military.load()
-
-    async def update(self, message):
-        await self.checkGG2Bubble(message)
-
-    async def checkGG2Bubble(self, message):
-        content = message.content.lower()
-        length = len(content)
-        if content in ["센트리", "우버", 'e']:
-            with open("./data/gg2/{}.png".format(content), "rb") as f:
-                await self.bot.send_file(message.channel, f)
-        elif content == 'f':
-            taunt = "{}{}".format(content, randint(0, 9))
-            with open("./data/gg2/{}.png".format(taunt), "rb") as f:
-                await self.bot.send_file(message.channel, f)
-        elif 0 < length <= 3:
-            if content[0] in ['z', 'c', 'f']:
-                if length != 2:
-                    return
-                if 49 <= ord(content[1]) <= 57:
-                    with open("./data/gg2/{}.png".format(content), "rb") as f:
-                        await self.bot.send_file(message.channel, f)
-            elif content[0] == 'x':
-                try:
-                    num = int(content[1:])
-                    if 0 <= num <= 29:
-                        with open("./data/gg2/{}.png".format(content), "rb") as f:
-                            await self.bot.send_file(message.channel, f)
-                except:
-                    return
 
     @commands.command(hidden=True)
     async def 핑(self):
         await self.bot.say("퐁이에용")
+
+    @commands.command(hidden=True)
+    async def 파일관리(self):
+        from urllib.request import Request, urlopen
+        request = Request("https://api.ipify.org/?format=json")
+        response = urlopen(request)
+        response_body = response.read().decode()
+        ip = json.loads(response_body)["ip"]
+        await self.bot.say("http://{}:8000/".format(ip))
 
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number : int = 100):
@@ -59,7 +42,7 @@ class General(Observable):
 
     @commands.command()
     async def 골라줘(self, *choices):
-        choices = [escape_mass_mentions(c) for c in choices]
+        choices = [c for c in choices]
         if len(choices) < 2:
             await self.bot.say("고를 수 있는 항목을 충분히 주세용")
         else:
@@ -72,54 +55,16 @@ class General(Observable):
     @commands.command(pass_context=True)
     async def 따귀(self, ctx, arg):
         await self.bot.say("{}의 뺨을 후려갈겼어용".format(arg))
-
+        
     @commands.command(pass_context=True)
     async def 전역일(self, ctx, arg):
-        available = ["육군", "공군", "공익"]
-
         if arg == "추가해줘":
-            await self.bot.say("등록할 이름을 말해주세용")
-            msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
-            if msg and msg.content:
-                name = msg.content
-                await self.bot.say("입대일자를 YYYY/MM/DD 양식으로 말해주세용")
-                msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
-                if msg and msg.content:
-                    try:
-                        dateinfo = msg.content.split("/")
-                        dateinfo = [int(i) for i in dateinfo]
-                        startDate = datetime.date(dateinfo[0], dateinfo[1], dateinfo[2])
-                        availableFormatted = ["`{}`".format(m) for m in available]
-                    except Exception as e:
-                        print(e)
-                        await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
-                        return
-                    await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
-                    msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
-                    if msg and msg.content:
-                        if msg.content in available:
-                            if msg.content == "육군":
-                                info = Military(startDate)
-                            elif msg.content == "공군":
-                                info = Airforce(startDate)
-                            elif msg.content == "공익":
-                                info = PublicService(startDate)
-                            self.military.setData(name, info)
-
-                            em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
-                            await self.bot.send_message(ctx.message.channel, embed=em)
-                        else:
-                            await self.bot.say("셋 중에 하나를 입력해주세용")
-                    else:
-                        await self.bot.say("취소되었어용")
-                else:
-                    await self.bot.say("취소되었어용")
-            else:
-                await self.bot.say("취소되었어용")
+            await self.addDischargeInfo(ctx)
         else:
             name = arg
-            if name in self.military.data:
-                person = self.military.data[name]
+            server = self.military.servers.get(ctx.message.server.id)
+            if server and name in server:
+                person = server[name]
                 ipdae = person.getStartDate()
                 discharge = person.getDischargeDate()
                 now = datetime.datetime.now().date()
@@ -144,10 +89,66 @@ class General(Observable):
                 await self.bot.send_message(ctx.message.channel, embed=em)
             else:
                 await self.bot.say("그 이름은 등록되어있지 않아용")
+    
+    async def addDischargeInfo(self, ctx):
+        name = await self.checkName(ctx)
+        if not name:
+            await self.bot.say("취소되었어용")
+            return
+        
+        startDate = await self.checkStartDate(ctx)
+        if not startDate:
+            return
+        
+        info = await self.checkArmyType(ctx, startDate)
+        if not info:
+            await self.bot.say("취소되었어용")
+            return
+
+        self.military.setData(ctx.message.server.id, name, info)
+        em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
+        await self.bot.send_message(ctx.message.channel, embed=em)
+
+    async def checkName(self, ctx):
+        await self.bot.say("등록할 이름을 말해주세용")
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=15)
+        if msg and msg.content:
+            name = msg.content
+            return name
+    
+    async def checkStartDate(self, ctx):
+        await self.bot.say("입대일자를 YYYY/MM/DD 양식으로 말해주세용")
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
+        if msg and msg.content:
+            try:
+                dateinfo = msg.content.split("/")
+                dateinfo = [int(i) for i in dateinfo]
+                startDate = datetime.date(dateinfo[0], dateinfo[1], dateinfo[2])
+                return startDate
+            except Exception as e:
+                await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
+                return
+    
+    async def checkArmyType(self, ctx, startDate):
+        available = ["육군", "공군", "공익"]
+        availableFormatted = ["`{}`".format(m) for m in available]
+        await self.bot.say("{}중에 어디에 입대했나용?".format(", ".join(availableFormatted)))
+        msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
+        if msg and msg.content:
+            if msg.content in available:
+                if msg.content == "육군":
+                    info = Military(startDate)
+                elif msg.content == "공군":
+                    info = Airforce(startDate)
+                elif msg.content == "공익":
+                    info = PublicService(startDate)
+                return info
+            else:
+                await self.bot.say("셋 중에 하나를 입력해주세용")
 
     @commands.command(pass_context=True)
     async def 수능(self, ctx):
-        dday = datetime.date(2017, 11, 16)
+        dday = datetime.date(2017, 11, 23)
         t = datetime.time(8, 40, 00)
         sunung = datetime.datetime.combine(dday, t)
         now = datetime.datetime.now()
@@ -159,85 +160,163 @@ class General(Observable):
         em = discord.Embed(title="⏰2018학년도 대학수학능력시험까지 D-{}".format(diff.days), description=desc, colour=0xDEADBF)
         await self.bot.send_message(ctx.message.channel, embed=em)
 
-class MilitaryInfo:
-    def __init__(self):
-        self.path = "military_info.json"
-        self.data = None
-    
-    def setData(self, key, value):
-        self.data[key] = value
-        self.save()
+    @commands.command(pass_context=True)
+    async def 투표(self, ctx, *args):
+        args = [arg for arg in args]
+        if not len(args):
+            self.bot.say("`타타루` `투표` `질문` `(옵션1)` `(옵션2)` `...`순으로 입력해주세용")
+            return
+        question = args[0]
+        options = args[1:]
+        if not options:
+            options = ["네", "아니오"]
+        optionEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"]
 
-    def load(self):
-        file = Path(self.path)
-        if file.is_file():
-            with open(self.path) as info:
-                try:
-                    encodedDict = json.load(info)
-                    self.data = dict()
-                    for key in encodedDict:
-                        personInfo = encodedDict[key]
-                        encodedDate = personInfo["startDate"]
-                        encodedDate = [int(i) for i in encodedDate.split("/")]
-                        encodedDate = datetime.date(encodedDate[0], encodedDate[1], encodedDate[2])
-                        if personInfo["class"] == "Military":
-                            self.data[key] = Military(encodedDate)
-                        elif personInfo["class"] == "Airforce":
-                            self.data[key] = Airforce(encodedDate)
-                        elif personInfo["class"] == "PublicService":
-                            self.data[key] = PublicService(encodedDate)
-                except Exception as e:
-                    print(e)
-                    self.data = dict()
+        desc = []
+        desc.append("🤔: {}?".format(question))
+        optionCnt = 0
+        for option in options:
+            desc.append("{}: {}".format(optionEmojis[optionCnt], options[optionCnt]))
+            optionCnt += 1
+        desc = "\n".join(desc)
+        em = discord.Embed(colour=0xDEADBF, description=desc)
+        name = ctx.message.author.nick
+        if not name:
+            name = ctx.message.author.name
+        em.set_footer(text="{}이(가) 제안했어용".format(name), icon_url=ctx.message.author.avatar_url)
+        msg = await self.bot.send_message(ctx.message.channel, embed=em)
+
+        optionEmojis = optionEmojis[:len(options)]
+        for emoji in optionEmojis:
+            await self.bot.add_reaction(msg, emoji)
+        
+        await asyncio.sleep(60)
+
+        msg = await self.bot.get_message(ctx.message.channel, msg.id)
+
+        reactions = {}
+        for reaction in msg.reactions:
+            reactions[reaction.emoji] = reaction.count
+        
+        result = discord.Embed(colour=0xDEADBF, title="🤔: {}? 에 대한 투표 결과에용".format(question))
+        optionCnt = 0
+        for option in options:
+            result.add_field(name="{}: {}".format(optionEmojis[optionCnt], options[optionCnt]),
+            value="{}표".format(reactions.get(optionEmojis[optionCnt]) - 1))
+            optionCnt += 1
+
+        await self.bot.send_message(ctx.message.channel, embed=result)
+    
+    @commands.command(pass_context=True)
+    async def 나무위키(self, ctx, *args):
+        await self.bot.send_typing(ctx.message.channel)
+        searchText = " ".join([arg for arg in args])
+        if searchText == "랜덤":
+            url = "https://namu.wiki/random"
         else:
-            self.data = dict()
+            encText = urllib.parse.quote(searchText.encode("utf-8"))
+            url = "https://namu.wiki/w/{}".format(encText)
+        http = HTTPHandler()
+        try:
+            response = http.get(url, None)
+        except:
+            await self.bot.say("문서가 존재하지 않아용")
+            return
+        
+        html = BeautifulSoup(response.read().decode(), 'html.parser')
+        content = html.find("article")
+        for br in content.find_all("br"):
+            br.replace_with("\n")
+        for delete in content.find_all("del"):
+            delete.string = "~~{}~~".format(delete.get_text())
+        title = content.find("h1", {"class": "title"}).find('a').string
 
-    def save(self):
-        f = open(self.path, "w")
-        infoToDump = {}
-        for key in self.data:
-            infoToDump[key] = self.data[key].encode()
-        f.write(json.dumps(infoToDump))
-        f.close()
+        items = content.find_all('', {"class": "wiki-heading"})
+        indexes = [item.find('a').string.rstrip('.') for item in items]
+        items = [item.get_text().rstrip("[편집]") for item in items]
+        descs = content.find_all("div", {"class": "wiki-heading-content"})
+        for desc in descs:
+            for ul in desc.find_all("ul", recursive=False):
+                self.sanitizeUl(ul)
 
-class Military:
-    def __init__(self, startDate):
-        self.startDate = startDate
+        articles = []
+        prev_article = content.find("div", {"class": "wiki-inner-content"})
+        for article in prev_article.find_all("p", recursive=False):
+            print(article)
+            if article.name == "p":
+                if article.find("div"):
+                    break
+                desc = article.get_text()[:2000]
+                if desc:
+                    articles.append(NamuArticle("", "", desc))
+            elif article.name == "ul":
+                self.sanitizeUl(article)
+                desc = article.get_text()[:2000]
+                if desc:
+                    articles.append(NamuArticle("", "", desc))
+        for i in range(len(items)):
+            desc = descs[i].get_text()[:2000]
+            if desc:
+                articles.append(NamuArticle(indexes[i], items[i], desc))
+
+        if not articles:
+            await self.bot.say("문서가 존재하지 않아용")
+            return
+
+        session = Session()
+        session.set(articles)
+        article = session.first()
+        em = discord.Embed(title=title, url="{}#s-{}".format(url, article.index), colour=0xDEADBF)
+        em.description = article.desc
+        em.set_footer(text=article.title)
+        msg = await self.bot.send_message(ctx.message.channel, embed=em)
+
+        emojiMenu = ["⬅", "➡", "❌"]
+        for emoji in emojiMenu:
+            await self.bot.add_reaction(msg, emoji)
+
+        while True:
+            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
+            if not res:
+                for emoji in emojiMenu:
+                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
+                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
+                return
+            elif res.reaction.emoji == "⬅":
+                article = session.prev()
+                em.set_footer(text=article.title)
+                em.url = "{}#s-{}".format(url, article.index)
+                em.description = article.desc
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
+            elif res.reaction.emoji == "➡":
+                article = session.next()
+                em.set_footer(text=article.title)
+                em.url = "{}#s-{}".format(url, article.index)
+                em.description = article.desc
+                await self.bot.edit_message(msg, embed=em)
+                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
+            elif res.reaction.emoji == "❌":
+                await self.bot.delete_message(msg)
+                await self.bot.delete_message(ctx.message)
+                return
     
-    def getStartDate(self):
-        return self.startDate
+    def sanitizeUl(self, ul, depth = 0):
+        for li in ul.find_all("li"):
+            self.sanitizeLi(li, depth)
+        ul.string = "{}".format(ul.get_text())
 
-    def getDischargeDate(self):
-        return self.startDate + relativedelta(months=21, days=-1)
+    def sanitizeLi(self, li, depth = 0):
+        icon = ["●", "○", "■"]
+        for ul in li.find_all("ul"):
+            self.sanitizeUl(ul, depth + 1)
+        li.string = "\n{}{} {}".format("　"*depth, icon[depth % 3], li.get_text())
 
-    def getEmojiSet(self):
-        return ("💖", "🖤")
-    
-    def getSymbol(self):
-        return "🔫"
-
-    def encode(self):
-        return {"class": "Military", "startDate": self.startDate.strftime("%Y/%m/%d")}
-
-class Airforce(Military):
-    def getDischargeDate(self):
-        return self.startDate + relativedelta(months=24, days=-1)
-
-    def getEmojiSet(self):
-        return ("🏇", "🐎")
-
-    def getSymbol(self):
-        return "✈️"
-    
-    def encode(self):
-        return {"class": "Airforce", "startDate": self.startDate.strftime("%Y/%m/%d")}
-
-class PublicService(Military):
-    def getEmojiSet(self):
-        return ("💖", "🖤")
-
-    def encode(self):
-        return {"class": "PublicService", "startDate": self.startDate.strftime("%Y/%m/%d")}
+class NamuArticle:
+    def __init__(self, index, title, desc):
+        self.index = index
+        self.title = title
+        self.desc = desc
 
 def setup(bot):
     general = General(bot)
