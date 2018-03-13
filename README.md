@@ -3,10 +3,6 @@
 
 접두사는 "타타루"로 고정되어있지만, main.py 파일에서 수정 가능합니다.
 
-A Korean Discord bot for multiple purpose.
-
-Prefix is fixed to "타타루" but you can change it by changing it in main.py
-
 # Prerequisites
 - Python version 3.5 or higher
 - Discord Bot User Token
@@ -44,9 +40,9 @@ cd tataru
 sudo python3 main.py
 ```
 
-# 명령어(Commands)
+# 명령어
 ## General
-#### 골라줘(Choose)
+#### 골라줘
 `타타루` `골라줘` `고를` `대상` `들`
 ```
 타타루 골라줘 하나 둘 셋
@@ -54,11 +50,9 @@ sudo python3 main.py
 ```
 여러 가지 인자들 중 하나를 골라줍니다.
 
-Choose one of the arguments
-
 *****
 
-#### 따귀(Slap)
+#### 따귀
 `타타루` `따귀` `대상`
 ```
 타타루 따귀 @찬피
@@ -66,11 +60,9 @@ Choose one of the arguments
 ```
 주어진 대상의 따귀를 후려갈깁니다.
 
-Slap the target given.
-
 *****
 
-#### 주사위(Dice)
+#### 주사위
 `타타루` `주사위` `최대숫자`
 ```
 타타루 주사위
@@ -80,11 +72,9 @@ Slap the target given.
 ```
 1~100 사이의 주사위를 굴립니다. 1보다 큰 인자가 주어질 경우 1과 해당 인자 사이의 주사위를 굴립니다.
 
-Roll dice between 1 to 100. If number is given, roll dice between 1 to that number.
-
 *****
 
-#### 핑(Ping)
+#### 핑
 `타타루` `핑`
 ```
 타타루 핑
@@ -92,11 +82,9 @@ Roll dice between 1 to 100. If number is given, roll dice between 1 to that numb
 ```
 테스트용, 퐁을 반환합니다.
 
-Returns message "Pong".
-
 *****
 
-#### 초대(Invite)
+#### 초대
 `타타루` `초대`
 ```
 타타루 초대
@@ -104,20 +92,21 @@ Returns message "Pong".
 ```
 타타루 봇 초대용 링크를 반환합니다.
 
-Returns invite link for Tataru bot.
+*****
+
+#### 전역일
+추가 : `타타루` `전역일` `추가해줘`
 
 *****
 
 ## Naver
-#### 지식인(Naver Q&A community search)
+#### 지식인
 `타타루` `지식인` `물어볼 내용`
 물어볼 내용에 해당하는 지식인 검색 결과를 반환합니다.
 
-Returns 지식iN(Naver Q&A Community) search result.
-
 *****
 
-#### 번역(Translation)
+#### 번역
 `타타루` `번역할 언어`로 `번역해줘/기계번역해줘` `번역할 내용`
 ```
 타타루 영어로 번역해줘 안녕하세요
@@ -134,17 +123,9 @@ Returns 지식iN(Naver Q&A Community) search result.
 
 `기계번역해줘` 사용시 `영어`, `중국어`로 번역 가능합니다.
 
-Korean to foriegn language translation command using Naver's Papago SMT, NMT API.
-
-Bot will use Papago SMT API when using `번역해줘` command, and will use NMT API when using `기계번역해줘` command.
-
-Can translate to `English`, `Chinese`, `Japanese` when using `번역해줘` command.
-
-Can translate to `English`, `Chinese` when using `기계번역해줘` command.
-
 *****
 
-#### 로마자변환(Romanization)
+#### 로마자변환
 `타타루` `로마자변환` `변환할 인명`
 ```
 타타루 로마자변환 홍길동
@@ -152,40 +133,32 @@ Can translate to `English`, `Chinese` when using `기계번역해줘` command.
 ```
 네이버 API를 이용, 인명을 로마자변환한 결과를 받아옵니다.
 
-By using Naver API, bot sends romanization result of Korean name.
-
 *****
 
-#### 얼굴인식(Face recognition)
+#### 얼굴인식
 `타타루` `얼굴인식` `인식할 이미지 URL`
 
 네이버 API를 이용, 이미지에서 얼굴인식된 결과를 받아옵니다. 얼굴인식 결과에는 감정, 성별, 나이, 닮은 연예인과 같은 정보가 포함되어 있습니다.
 
-By using Naver API, bot sends face recognition result including info of emotion, gender, age, similar celebrity.
-
 *****
 
-#### 네이버이미지(Naver image search)
+#### 네이버이미지
 `타타루` `네이버이미지` `검색할 내용`
 
 네이버의 이미지 검색 결과를 받아옵니다.
 
-Returns image search result from Naver.
-
 *****
 
 ## Google
-#### 이미지(Image)
+#### 이미지
 `타타루` `이미지` `검색할 내용`
 
 구글의 이미지 검색 결과를 받아옵니다.
 
-Returns image search result from Google.
-
 *****
 
 ## Dangerous Invite
-#### 위험한초대(Dangerous Invite Game)
+#### 위험한초대
 `타타루` `위험한초대`
 
 위험한초대 게임을 만듭니다.
@@ -196,17 +169,11 @@ Creates a new game of "Dangerous Invite"
 
 게임 시작시 24시간의 시간이 주어지며, 시간 내에 시작한 봇을 제외한 어떤 유저든 해당 단어가 포함된 단어를 말할 시 서버에서 추방되고 게임이 종료됩니다. 혹은 24시간의 시간이 지날시 게임을 시작한 사람이 서버에서 추방됩니다.
 
-By putting a command `타타루 위험한초대`, user will get a DM. After saying 3-length word in DM to bot, game will start.
-
-24 hours are given after starting game. Anyone except bots saying a sentence including target word will be kicked from server. If no one says target word within 24 hours, the one who started game will be kicked from server.
-
 *****
 
-# 추가기능(Additional Features)
-## GG2 Bubble 변환
+## GG2
+#### GG2 Bubble 변환
 채팅 메시지가 GG2 bubble에 해당하는 메시지일시 해당 버블 이미지를 전송.
-
-If message content is same with GG2 bubble, it will send that image.
 
 - 사용가능한 GG2 Bubbles (Available GG2 Bubbles)
     - `z1` ~ `z9`
