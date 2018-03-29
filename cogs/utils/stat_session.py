@@ -2,11 +2,14 @@ import discord
 import urllib
 
 class StatSession:
+    '''
+    페이지별 포맷이 다른 Session
+    '''
     def __init__(self, stat):
         self.index = 0
         self.pages = [self.overall, self.playtime, self.classinfo]
         self.stat = stat
-    
+
     def makeEmbed(self):
         nickname = self.stat["nickname"]
         encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
@@ -16,21 +19,21 @@ class StatSession:
         icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname))
         em.set_footer(text="{}({}/{})".format(self.pages[self.index].__doc__, self.index + 1, len(self.pages)))
         return em
-    
+
     def prev(self):
         self.index -= 1
         if self.index < 0:
             self.index = len(self.pages) - 1
         prevPage = self.pages[self.index]
         return prevPage()
-    
+
     def next(self):
         self.index += 1
         if self.index >= len(self.pages):
             self.index = 0
         nextPage = self.pages[self.index]
         return nextPage()
-    
+
     def overall(self):
         """종합정보"""
         nickname = self.stat["nickname"]
@@ -41,7 +44,7 @@ class StatSession:
 
         em = self.makeEmbed()
         em.set_thumbnail(url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname))
-        
+
         desc = []
         desc.append(":flag_{}:".format(region))
         if self.stat["title"]:
@@ -56,7 +59,7 @@ class StatSession:
         desc = "{}".format(desc)
         em.description = desc
         return em
-    
+
     def playtime(self):
         """플레이타임"""
         red = int(self.stat["time_red"] * 100 / self.stat["time_total"])
@@ -79,11 +82,11 @@ class StatSession:
         em = self.makeEmbed()
         em.set_image(url=chartUrl)
         return em
-    
+
     def classinfo(self):
         """클래스별 정보"""
         classes = ["runner", "firebug", "rocketman", "overweight", "detonator", "healer", "constructor", "infiltrator", "rifleman", "quote"]
-        
+
         killData = []
         for cls in classes:
             killData.append(str(self.stat["{}_kill".format(cls)]))
@@ -110,7 +113,7 @@ class StatSession:
         em = self.makeEmbed()
         em.set_image(url=chartUrl)
         return em
-    
+
     def parseTime(self, time_key):
         user_time = self.stat[time_key]
         time_h = 0
@@ -127,7 +130,7 @@ class StatSession:
         return (time_h, time_m, time_s)
 
     def timeToString(self, timeInfo):
-        result = []        
+        result = []
         h, m ,s = timeInfo
         if h > 0:
             result.append("{}h".format(h))

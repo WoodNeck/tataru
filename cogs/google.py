@@ -20,7 +20,7 @@ class Google:
         self.headers["cache-control"] = "max-age=0"
         self.youtube_key = None
 
-    @commands.command(pass_context=True)  
+    @commands.command(pass_context=True)
     async def 이미지(self, ctx, *args):
         await self.bot.send_typing(ctx.message.channel)
         if len(args) == 0:
@@ -34,42 +34,9 @@ class Google:
         if not images:
             self.bot.say("검색 결과가 없어용")
             return
-        session = Session()
-        session.set(images)
-        image = session.first()
-        
-        em = discord.Embed(colour=0xDEADBF)
-        em.set_image(url=image)
-        em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-        msg = await self.bot.send_message(ctx.message.channel, embed=em)
-
-        emojiMenu = ["⬅", "➡", "❌"]
-        for emoji in emojiMenu:
-            await self.bot.add_reaction(msg, emoji)
-
-        while True:
-            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-            if not res:
-                for emoji in emojiMenu:
-                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                return
-            elif res.reaction.emoji == "⬅":
-                image = session.prev()
-                em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-            elif res.reaction.emoji == "➡":
-                image = session.next()
-                em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-            elif res.reaction.emoji == "❌":
-                await self.bot.delete_message(msg)
-                await self.bot.delete_message(ctx.message)
-                return
+        pages = [Page(image=image) for image in images]
+        session = Session(self.bot, ctx.message, pages, show_footer=True)
+        await session.start()
 
     def getHtml(self, url):
         http = HTTPHandler()
@@ -116,7 +83,7 @@ class Google:
         if len(args) == 0:
             await self.bot.say("검색어를 추가로 입력해주세용")
             return
-        
+
         if args[0] == "재생해줘":
             if len(args) == 1:
                 await self.bot.say("주소를 추가로 입력해주세용")
@@ -209,7 +176,7 @@ class Google:
 
     def videoDesc(self, video, session):
         return "`{}/{}` {} `[{}]`".format(session.index() + 1, session.count(), video.url, video.time)
-    
+
     def parseVideo(self, video):
         time = video.find("span").string.lstrip("- 길이: ")
         tag = video.find('a')

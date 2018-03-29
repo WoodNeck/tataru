@@ -16,16 +16,16 @@ class MusicPlayer:
         self.player = None
         self.currentSong = None
         self.loop = False
-    
+
     def makeLocalPlayer(self, fileDir):
         self.player = self.voiceClient.create_ffmpeg_player(fileDir, after=self.afterPlay)
-    
+
     async def makeYoutubePlayer(self, url):
         self.player = await self.voiceClient.create_ytdl_player(url, after=self.afterPlay)
 
     def add(self, song):
         self.queue.enqueue(song)
-    
+
     async def play(self):
         if not self.shouldPlay():
             return
@@ -43,7 +43,7 @@ class MusicPlayer:
             self.player.start()
         else:
             await self.cog.leaveVoice(self.server)
-    
+
     def stop(self):
         if self.player:
             self.player.stop()
@@ -55,7 +55,7 @@ class MusicPlayer:
     async def skip(self):
         self.stop()
         await self.play()
-    
+
     async def skipIndex(self, ctx, index):
         if 0 <= index <= len(self.queue.list) - 1:
             song = self.queue.list.pop(index)
@@ -63,7 +63,7 @@ class MusicPlayer:
         else:
             await self.cog.bot.send_message(ctx.message.channel, "재생목록의 범위를 넘어섰어용")
             return
-    
+
     async def printSongList(self, channel):
         if self.queue.empty():
             await self.cog.bot.send_message(channel, "큐가 비어있어용")
@@ -74,7 +74,7 @@ class MusicPlayer:
                 desc.append("`{}`. {}".format(cnt, song.desc()))
                 cnt += 1
             await self.cog.bot.send_message(channel, "\n".join(desc)[:2000])
-    
+
     async def displayCurrentStatus(self, channel):
         if self.player:
             current = int(time.time() - self.player._start)
@@ -98,10 +98,10 @@ class MusicPlayer:
             em = discord.Embed(title=title, description=progress, colour=0xDEADBF)
             em.set_footer(text=self.currentSong.user.display_name, icon_url=self.currentSong.user.avatar_url)
             await self.cog.bot.send_message(channel, embed=em)
-                
+
     def parseTime(self, time):
         timeHour = time // 3600
-        timeMin = time // 60
+        timeMin = (time % 3600) // 60
         timeSec = time % 60
         if timeHour > 0:
             return "{}:{:0>2}:{:0>2}".format(timeHour, timeMin, timeSec)
@@ -113,7 +113,7 @@ class MusicPlayer:
             self.queue.enqueue(self.currentSong)
         if self.player.is_done():
             asyncio.run_coroutine_threadsafe(self.skip(), self.cog.loop)
-        
+
     def shouldPlay(self):
         if not self.player:
             return True
