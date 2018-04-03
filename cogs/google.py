@@ -1,7 +1,6 @@
 import discord
 import urllib
 import json
-from functools import partialmethod
 from discord.ext import commands
 from .sound import Sound
 from cogs.utils.session import Session, Page
@@ -123,8 +122,8 @@ class Google:
             if not videos:
                 await self.bot.say("검색 결과가 없어용")
                 return
-            session = Session(self.bot, ctx.message, pages, show_footer=True)
-            playBtnCallback = partialmethod(self.playVideo, session)
+            session = Session(self.bot, ctx.message, videos, is_embed=False)
+            playBtnCallback = lambda: self.playVideo(ctx, session)
             session.addEmoji("▶", callback=playBtnCallback , pos=1)
             await session.start()
 
@@ -135,32 +134,30 @@ class Google:
         http = HTTPHandler()
         response = http.get(youtubeUrl, self.headers)
         html = BeautifulSoup(response.read().decode(), 'html.parser')
-        _videos = html.find_all("div", {"class": "yt-lockup-content"})
+        videoDOMs = html.find_all("div", {"class": "yt-lockup-content"})
         videos = []
-        for video in _videos:
-            url = video.find('a').get("href")
+        for videoDOM in videoDOMs:
+            url = videoDOM.find('a').get("href")
             if not "user" in url and not "list" in url and not "channel" in url and not "googleads" in url:
-                videos.append(self.parseVideo(video))
+                videos.append(self.parseVideo(videoDOM))
         return videos
 
     def parseVideo(self, video):
-        videoDesc = "{} `[{}]`".format(video.url, video.time)
         videoTitle = video.find('a').get("title")
         videoUrl = "https://www.youtube.com{}".format(video.find('a').get("href"))
         videoTime = video.find("span").string.lstrip("- 길이: ")
-        return Video(desc=videoDesc, url=videoUrl, video_time=videoTitle, video_time=time)
-    
-    def videoDesc(self, video):
-        return "{} `[{}]`".format(video.url, video.time)
+        videoDesc = "{} `[{}]`".format(videoUrl, videoTime)
+        return Video(desc=videoDesc, url=videoUrl, video_title=videoTitle, video_time=videoTime)
 
-    async def playVideo(self, session):
+    async def playVideo(self, ctx, session):
         video = session.current()
         await session.deleteMsg()
-        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.videoTitle, video.time)
+        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.videoUrl, video.videoTitle, video.videoTime)
 
 class Video(Page):
     def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None, video_title=None, video_time=None):
-        super(Video, self).__init__(title, desc, url, image, thumb, footer_format)
+        super(Video, self).__init__(title, desc, None, image, thumb, footer_format)
+        self.videoUrl = url
         self.videoTitle = video_title
         self.videoTime = video_time
 

@@ -255,6 +255,7 @@ class General():
                 if desc:
                     page = Page(title=title, desc=desc, url=url, footer_format="")
                     articles.append(page)
+        
         for i in range(len(items)):
             desc = descs[i].get_text()[:2000]
             if desc:
@@ -265,7 +266,7 @@ class General():
             await self.bot.say("문서가 존재하지 않아용")
             return
 
-        session = Session(self.bot, ctx.message, pages=articles, max_time=60)
+        session = Session(self.bot, ctx.message, pages=articles, max_time=60, show_footer=True)
         await session.start()
         
     def sanitizeUl(self, ul, depth = 0):
