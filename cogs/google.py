@@ -1,9 +1,10 @@
 import discord
 import urllib
 import json
+from functools import partialmethod
 from discord.ext import commands
 from .sound import Sound
-from cogs.utils.session import Session
+from cogs.utils.session import Session, Page
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_type import MusicType
 from cogs.utils.music_player import MusicPlayer
@@ -119,45 +120,13 @@ class Google:
             await self.bot.send_typing(ctx.message.channel)
             searchText = " ".join([arg for arg in args])
             videos = self.searchVideos(searchText)
-            if videos:
-                session = Session()
-                session.set(videos)
-                video = session.first()
-                description = self.videoDesc(video, session)
-                msg = await self.bot.send_message(ctx.message.channel, description)
-
-                emojiMenu = ["⬅", "▶", "➡", "❌"]
-                for emoji in emojiMenu:
-                    await self.bot.add_reaction(msg, emoji)
-                while True:
-                    res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-                    if not res:
-                        for emoji in emojiMenu:
-                            await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                            await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                        return
-                    elif res.reaction.emoji == "⬅":
-                        video = session.prev()
-                        description = self.videoDesc(video, session)
-                        await self.bot.edit_message(msg, description)
-                        await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-                    elif res.reaction.emoji == "➡":
-                        video = session.next()
-                        description = self.videoDesc(video, session)
-                        await self.bot.edit_message(msg, description)
-                        await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-                    elif res.reaction.emoji == "▶":
-                        video = session.current()
-                        await self.bot.delete_message(msg)
-                        await self.bot.delete_message(ctx.message)
-                        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.title, video.time)
-                        return
-                    elif res.reaction.emoji == "❌":
-                        await self.bot.delete_message(msg)
-                        await self.bot.delete_message(ctx.message)
-                        return
-            else:
+            if not videos:
                 await self.bot.say("검색 결과가 없어용")
+                return
+            session = Session(self.bot, ctx.message, pages, show_footer=True)
+            playBtnCallback = partialmethod(self.playVideo, session)
+            session.addEmoji("▶", callback=playBtnCallback , pos=1)
+            await session.start()
 
     def searchVideos(self, searchText):
         searchText = urllib.parse.quote(searchText)
@@ -174,19 +143,26 @@ class Google:
                 videos.append(self.parseVideo(video))
         return videos
 
-    def videoDesc(self, video, session):
-        return "`{}/{}` {} `[{}]`".format(session.index() + 1, session.count(), video.url, video.time)
-
     def parseVideo(self, video):
-        time = video.find("span").string.lstrip("- 길이: ")
-        tag = video.find('a')
-        return Video(tag.get("title"), "https://www.youtube.com{}".format(tag.get("href")), time)
+        videoDesc = "{} `[{}]`".format(video.url, video.time)
+        videoTitle = video.find('a').get("title")
+        videoUrl = "https://www.youtube.com{}".format(video.find('a').get("href"))
+        videoTime = video.find("span").string.lstrip("- 길이: ")
+        return Video(desc=videoDesc, url=videoUrl, video_time=videoTitle, video_time=time)
+    
+    def videoDesc(self, video):
+        return "{} `[{}]`".format(video.url, video.time)
 
-class Video:
-    def __init__(self, title, url, time):
-        self.title = title
-        self.url = url
-        self.time = time
+    async def playVideo(self, session):
+        video = session.current()
+        await session.deleteMsg()
+        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.videoTitle, video.time)
+
+class Video(Page):
+    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None, video_title=None, video_time=None):
+        super(Video, self).__init__(title, desc, url, image, thumb, footer_format)
+        self.videoTitle = video_title
+        self.videoTime = video_time
 
 def setup(bot):
     cog = Google(bot)
