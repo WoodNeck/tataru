@@ -4,7 +4,7 @@ import urllib
 import asyncio
 import datetime
 from discord.ext import commands
-from cogs.utils.session import Session
+from cogs.utils.session import Session, Page
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.military_info import *
 from pathlib import Path
@@ -240,67 +240,35 @@ class General():
                 self.sanitizeUl(ul)
 
         articles = []
-        prev_article = content.find("div", {"class": "wiki-inner-content"})
+        prev_article = content.find("div", {"class": "wiki-inner-content"}) #넘버링된 Article들 위의 문단
         for article in prev_article.find_all("p", recursive=False):
-            print(article)
             if article.name == "p":
                 if article.find("div"):
                     break
                 desc = article.get_text()[:2000]
                 if desc:
-                    articles.append(NamuArticle("", "", desc))
+                    page = Page(title=title, desc=desc, url=url, footer_format="")
+                    articles.append(page)
             elif article.name == "ul":
                 self.sanitizeUl(article)
                 desc = article.get_text()[:2000]
                 if desc:
-                    articles.append(NamuArticle("", "", desc))
+                    page = Page(title=title, desc=desc, url=url, footer_format="")
+                    articles.append(page)
+        
         for i in range(len(items)):
             desc = descs[i].get_text()[:2000]
             if desc:
-                articles.append(NamuArticle(indexes[i], items[i], desc))
+                page = Page(title=title, desc=desc, url="{}#s-{}".format(url, indexes[i]), footer_format=items[i])
+                articles.append(page)
 
         if not articles:
             await self.bot.say("문서가 존재하지 않아용")
             return
 
-        session = Session()
-        session.set(articles)
-        article = session.first()
-        em = discord.Embed(title=title, url="{}#s-{}".format(url, article.index), colour=0xDEADBF)
-        em.description = article.desc
-        em.set_footer(text=article.title)
-        msg = await self.bot.send_message(ctx.message.channel, embed=em)
-
-        emojiMenu = ["⬅", "➡", "❌"]
-        for emoji in emojiMenu:
-            await self.bot.add_reaction(msg, emoji)
-
-        while True:
-            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-            if not res:
-                for emoji in emojiMenu:
-                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                return
-            elif res.reaction.emoji == "⬅":
-                article = session.prev()
-                em.set_footer(text=article.title)
-                em.url = "{}#s-{}".format(url, article.index)
-                em.description = article.desc
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-            elif res.reaction.emoji == "➡":
-                article = session.next()
-                em.set_footer(text=article.title)
-                em.url = "{}#s-{}".format(url, article.index)
-                em.description = article.desc
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-            elif res.reaction.emoji == "❌":
-                await self.bot.delete_message(msg)
-                await self.bot.delete_message(ctx.message)
-                return
-    
+        session = Session(self.bot, ctx.message, pages=articles, max_time=60, show_footer=True)
+        await session.start()
+        
     def sanitizeUl(self, ul, depth = 0):
         for li in ul.find_all("li"):
             self.sanitizeLi(li, depth)
@@ -311,12 +279,6 @@ class General():
         for ul in li.find_all("ul"):
             self.sanitizeUl(ul, depth + 1)
         li.string = "\n{}{} {}".format("　"*depth, icon[depth % 3], li.get_text())
-
-class NamuArticle:
-    def __init__(self, index, title, desc):
-        self.index = index
-        self.title = title
-        self.desc = desc
 
 def setup(bot):
     general = General(bot)

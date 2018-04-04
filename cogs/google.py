@@ -3,7 +3,7 @@ import urllib
 import json
 from discord.ext import commands
 from .sound import Sound
-from cogs.utils.session import Session
+from cogs.utils.session import Session, Page
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_type import MusicType
 from cogs.utils.music_player import MusicPlayer
@@ -20,7 +20,7 @@ class Google:
         self.headers["cache-control"] = "max-age=0"
         self.youtube_key = None
 
-    @commands.command(pass_context=True)  
+    @commands.command(pass_context=True)
     async def 이미지(self, ctx, *args):
         await self.bot.send_typing(ctx.message.channel)
         if len(args) == 0:
@@ -34,42 +34,9 @@ class Google:
         if not images:
             self.bot.say("검색 결과가 없어용")
             return
-        session = Session()
-        session.set(images)
-        image = session.first()
-        
-        em = discord.Embed(colour=0xDEADBF)
-        em.set_image(url=image)
-        em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-        msg = await self.bot.send_message(ctx.message.channel, embed=em)
-
-        emojiMenu = ["⬅", "➡", "❌"]
-        for emoji in emojiMenu:
-            await self.bot.add_reaction(msg, emoji)
-
-        while True:
-            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-            if not res:
-                for emoji in emojiMenu:
-                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                return
-            elif res.reaction.emoji == "⬅":
-                image = session.prev()
-                em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-            elif res.reaction.emoji == "➡":
-                image = session.next()
-                em.set_image(url=image)
-                em.set_footer(text="{}/{}".format(session.index() + 1, session.count()))
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-            elif res.reaction.emoji == "❌":
-                await self.bot.delete_message(msg)
-                await self.bot.delete_message(ctx.message)
-                return
+        pages = [Page(image=image) for image in images]
+        session = Session(self.bot, ctx.message, pages, show_footer=True)
+        await session.start()
 
     def getHtml(self, url):
         http = HTTPHandler()
@@ -116,7 +83,7 @@ class Google:
         if len(args) == 0:
             await self.bot.say("검색어를 추가로 입력해주세용")
             return
-        
+
         if args[0] == "재생해줘":
             if len(args) == 1:
                 await self.bot.say("주소를 추가로 입력해주세용")
@@ -152,45 +119,13 @@ class Google:
             await self.bot.send_typing(ctx.message.channel)
             searchText = " ".join([arg for arg in args])
             videos = self.searchVideos(searchText)
-            if videos:
-                session = Session()
-                session.set(videos)
-                video = session.first()
-                description = self.videoDesc(video, session)
-                msg = await self.bot.send_message(ctx.message.channel, description)
-
-                emojiMenu = ["⬅", "▶", "➡", "❌"]
-                for emoji in emojiMenu:
-                    await self.bot.add_reaction(msg, emoji)
-                while True:
-                    res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-                    if not res:
-                        for emoji in emojiMenu:
-                            await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                            await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                        return
-                    elif res.reaction.emoji == "⬅":
-                        video = session.prev()
-                        description = self.videoDesc(video, session)
-                        await self.bot.edit_message(msg, description)
-                        await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-                    elif res.reaction.emoji == "➡":
-                        video = session.next()
-                        description = self.videoDesc(video, session)
-                        await self.bot.edit_message(msg, description)
-                        await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-                    elif res.reaction.emoji == "▶":
-                        video = session.current()
-                        await self.bot.delete_message(msg)
-                        await self.bot.delete_message(ctx.message)
-                        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.title, video.time)
-                        return
-                    elif res.reaction.emoji == "❌":
-                        await self.bot.delete_message(msg)
-                        await self.bot.delete_message(ctx.message)
-                        return
-            else:
+            if not videos:
                 await self.bot.say("검색 결과가 없어용")
+                return
+            session = Session(self.bot, ctx.message, videos, is_embed=False)
+            playBtnCallback = lambda: self.playVideo(ctx, session)
+            session.addEmoji("▶", callback=playBtnCallback , pos=1)
+            await session.start()
 
     def searchVideos(self, searchText):
         searchText = urllib.parse.quote(searchText)
@@ -199,27 +134,32 @@ class Google:
         http = HTTPHandler()
         response = http.get(youtubeUrl, self.headers)
         html = BeautifulSoup(response.read().decode(), 'html.parser')
-        _videos = html.find_all("div", {"class": "yt-lockup-content"})
+        videoDOMs = html.find_all("div", {"class": "yt-lockup-content"})
         videos = []
-        for video in _videos:
-            url = video.find('a').get("href")
+        for videoDOM in videoDOMs:
+            url = videoDOM.find('a').get("href")
             if not "user" in url and not "list" in url and not "channel" in url and not "googleads" in url:
-                videos.append(self.parseVideo(video))
+                videos.append(self.parseVideo(videoDOM))
         return videos
 
-    def videoDesc(self, video, session):
-        return "`{}/{}` {} `[{}]`".format(session.index() + 1, session.count(), video.url, video.time)
-    
     def parseVideo(self, video):
-        time = video.find("span").string.lstrip("- 길이: ")
-        tag = video.find('a')
-        return Video(tag.get("title"), "https://www.youtube.com{}".format(tag.get("href")), time)
+        videoTitle = video.find('a').get("title")
+        videoUrl = "https://www.youtube.com{}".format(video.find('a').get("href"))
+        videoTime = video.find("span").string.lstrip("- 길이: ")
+        videoDesc = "{} `[{}]`".format(videoUrl, videoTime)
+        return Video(desc=videoDesc, url=videoUrl, video_title=videoTitle, video_time=videoTime)
 
-class Video:
-    def __init__(self, title, url, time):
-        self.title = title
-        self.url = url
-        self.time = time
+    async def playVideo(self, ctx, session):
+        video = session.current()
+        await session.deleteMsg()
+        await Sound.instance.play(ctx, MusicType.YOUTUBE, video.videoUrl, video.videoTitle, video.videoTime)
+
+class Video(Page):
+    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None, video_title=None, video_time=None):
+        super(Video, self).__init__(title, desc, None, image, thumb, footer_format)
+        self.videoUrl = url
+        self.videoTitle = video_title
+        self.videoTime = video_time
 
 def setup(bot):
     cog = Google(bot)

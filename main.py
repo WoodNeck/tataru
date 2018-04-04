@@ -16,25 +16,25 @@ class Bot(commands.Bot):
         self.prefix = prefix
         self.privateMsgObserver = Observer()
         self.publicMsgObserver = Observer()
-    
+
     def listenPrivateMsg(self, observable):
         self.privateMsgObserver.register(observable)
-    
+
     def listenPublicMsg(self, observable):
         self.publicMsgObserver.register(observable)
-    
+
     def dropPrivateMsg(self, observable):
         self.privateMsgObserver.unregister(observable)
 
     def dropPublicMsg(self, observable):
         self.publicMsgObserver.unregister(observable)
-    
+
     async def updatePrivate(self, message):
         await self.privateMsgObserver.update(message)
 
     async def updatePublic(self, message):
         await self.publicMsgObserver.update(message)
-    
+
 def initialize(bot_class=Bot):
     bot = bot_class(description=des)
 
