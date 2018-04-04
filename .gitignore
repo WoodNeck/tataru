@@ -106,6 +106,9 @@ config.ini
 # vscode
 .vscode/
 
+# main
+main.py
+
 # temporary files
 temp/
 military_info.json

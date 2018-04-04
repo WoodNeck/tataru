@@ -17,7 +17,7 @@ class Session:
         self._pages = pages
         self._maxTime = max_time
         self._embedColor = color
-        self._emojiMenu = ["⬅", "➡", "❌"]
+        self._emojiMenu = [SessionEmoji.PREV, SessionEmoji.NEXT, SessionEmoji.DELETE]
         self._callbacks = [self._prev, self._next, self.deleteMsg]
         self._is_embed = is_embed
         self._sessionMsg = None
