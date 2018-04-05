@@ -100,21 +100,19 @@ ENV/
 # mypy
 .mypy_cache/
 
-# project config
+# project controlled files
+main.py
 config.ini
+military_info.json
 
 # vscode
 .vscode/
 
-# main
-main.py
-
 # temporary files
 temp/
-military_info.json
 
 # codes not used
 obsolete/
 
-# data files
+# mutable data files
 data/mutable
