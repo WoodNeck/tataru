@@ -98,6 +98,8 @@ def load_cogs(bot):
     if failed:
         print("\n{}를 로드하는데 실패했어용.\n".format(" ".join(failed)))
 
+    return failed
+
 
 if __name__ == '__main__':
     bot = initialize()
@@ -108,6 +110,6 @@ if __name__ == '__main__':
     token = config.request("BotUser", "Token")
     config.save()
 
-    logging.basicConfig(filename='./tataru.log', level=logging.DEBUG)
+    logging.basicConfig(filename='./tataru.log', level=logging.ERROR)
 
     bot.run(token)

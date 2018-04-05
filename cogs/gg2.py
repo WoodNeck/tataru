@@ -5,7 +5,7 @@ from discord.ext import commands
 from random import randint
 from cogs.utils.observable import Observable
 from cogs.utils.http_handler import HTTPHandler
-from cogs.utils.stat_session import StatSession
+from cogs.utils.session import Session, Page, AuthorInfo
 
 
 class GG2(Observable):
@@ -129,33 +129,141 @@ class GG2(Observable):
             await self.bot.say("해당 유저의 정보가 없어용")
             return
 
-        session = StatSession(stat)
-        em = session.overall()
-        msg = await self.bot.send_message(ctx.message.channel, embed=em)
+        pages = []
+        pages.append(self.overall(stat))
+        pages.append(self.playtime(stat))
+        pages.append(self.classinfo(stat))
 
-        emojiMenu = ["⬅", "➡", "❌"]
-        for emoji in emojiMenu:
-            await self.bot.add_reaction(msg, emoji)
+        session = Session(self.bot, ctx.message, pages=pages, show_footer=True)
+        await session.start()
 
-        while True:
-            res = await self.bot.wait_for_reaction(emojiMenu, timeout=30, user=ctx.message.author, message=msg)
-            if not res:
-                for emoji in emojiMenu:
-                    await self.bot.remove_reaction(msg, emoji, self.bot.user)
-                    await self.bot.remove_reaction(msg, emoji, ctx.message.author)
-                return
-            elif res.reaction.emoji == "⬅":
-                em = session.prev()
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "⬅", ctx.message.author)
-            elif res.reaction.emoji == "➡":
-                em = session.next()
-                await self.bot.edit_message(msg, embed=em)
-                await self.bot.remove_reaction(msg, "➡", ctx.message.author)
-            elif res.reaction.emoji == "❌":
-                await self.bot.delete_message(msg)
-                await self.bot.delete_message(ctx.message)
-                return
+    def overall(self, stat):
+        nickname = stat["nickname"]
+        encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
+        region = stat["region"][:2].lower()
+        kda = (stat["kill"] + stat["assist"]) / max(stat["death"], 1)
+        h, m, d = self.parseTime(stat["time_total"])
+
+        thumb = "http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname)
+
+        desc = []
+        desc.append(":flag_{}:".format(region))
+        if stat["title"]:
+            desc.append("\"{}\"".format(stat["title"]))
+        desc.append("`LEVEL` **{}** `EXP` **{}** / **{}** `COIN` **{}**".format(stat["level"], stat["exp"], self.maxExp(stat["level"]), stat["coin"]))
+        desc.append("**{}**시간 **{}**분 **{}**초동안 **{}**판 플레이".format(h, m, d, stat["playcount"]))
+        desc.append("🔫: **{}**, 💀: **{}**, 🤝: **{}**, `KDA`: **{:.2f}**".format(stat["kill"], stat["death"], stat["assist"], kda))
+        desc.append("🚩: **{}**, 🛡️: **{}**, 💥: **{}**".format(stat["capture"], stat["defense"], stat["destruction"]))
+        desc.append("🗡️: **{}**, ♥️: **{}**, 🌟: **{}**".format(stat["stab"], self.strlize(stat["healing"]), stat["invuln"]))
+        desc.append("**{}**`승` **{}**`패` **{}**`비김` **{}**`탈주`".format(stat["win"], stat["lose"], stat["draw"], stat["disconnect"]))
+        desc = "\n".join(desc)
+        author = AuthorInfo(
+            name="{}{}의 스텟 정보에용".format(stat["clan"], nickname),
+            url="http://gg2statsapp.appspot.com/profile?id={}".format(encodedNickname),
+            icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname)
+        )
+        return Page(desc=desc, authorInfo=author, thumb=thumb, footer_format="종합정보(%index/%total)")
+
+    def playtime(self, stat):
+        nickname = stat["nickname"]
+        encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
+
+        red = int(stat["time_red"] * 100 / stat["time_total"])
+        blue = int(stat["time_blue"] * 100 / stat["time_total"])
+        spec = int(stat["time_spectate"] * 100 / stat["time_total"])
+
+        redStr = self.timeToString(self.parseTime(stat["time_red"]))
+        blueStr = self.timeToString(self.parseTime(stat["time_blue"]))
+        specStr = self.timeToString(self.parseTime(stat["time_spectate"]))
+
+        chartUrl = ["https://image-charts.com/chart?cht=p"]
+        chartUrl.append("chtt={}'s+Playtime".format(stat["nickname"]))
+        chartUrl.append("chs=300x300")
+        chartUrl.append("chd=t:{},{},{}".format(red, blue, spec))
+        chartUrl.append("chl={}|{}|{}".format(redStr, blueStr, specStr))
+        chartUrl.append("chds=a")
+        chartUrl.append("chdl=Red|Blue|Spectate")
+        chartUrl.append("chco=FF6347,4169E1,757575")
+        chartUrl = "&".join(chartUrl)
+
+        author = AuthorInfo(
+            name="{}{}의 스텟 정보에용".format(stat["clan"], nickname),
+            url="http://gg2statsapp.appspot.com/profile?id={}".format(encodedNickname),
+            icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname)
+        )
+        return Page(image=chartUrl, authorInfo=author, footer_format="플레이타임(%index/%total)")
+
+    def classinfo(self, stat):
+        nickname = stat["nickname"]
+        encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
+        classes = ["runner", "firebug", "rocketman", "overweight", "detonator", "healer", "constructor", "infiltrator", "rifleman", "quote"]
+
+        killData = []
+        for cls in classes:
+            killData.append(str(stat["{}_kill".format(cls)]))
+        killData = ",".join(killData)
+
+        deathData = []
+        for cls in classes:
+            deathData.append(str(stat["{}_death".format(cls)]))
+        deathData = ",".join(deathData)
+
+        assistData = []
+        for cls in classes:
+            assistData.append(str(stat["{}_assist".format(cls)]))
+        assistData = ",".join(assistData)
+
+        classData = [killData, deathData, assistData]
+        classData = "|".join(classData)
+
+        chartUrl = ["https://image-charts.com/chart?cht=bhs"]
+        chartUrl.append("chs=600x300")
+        chartUrl.append("chd=t:{}".format(classData))
+        chartUrl.append("chdl=Kill|Death|Assist")
+        chartUrl = "&".join(chartUrl)
+
+        author = AuthorInfo(
+            name="{}{}의 스텟 정보에용".format(stat["clan"], nickname),
+            url="http://gg2statsapp.appspot.com/profile?id={}".format(encodedNickname),
+            icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname)
+        )
+        return Page(image=chartUrl, authorInfo=author, footer_format="클래스별 정보(%index/%total)")
+
+    def parseTime(self, user_time):
+        time_h = 0
+        time_m = 0
+        time_s = 0
+        if user_time // 108000:
+            time_h = user_time // 108000
+            user_time -= 108000 * time_h
+        if user_time // 1800 and time_h < 100:
+            time_m = user_time // 1800
+            user_time -= 1800 * time_m
+        if not time_h:
+            time_s = user_time // 30
+        return (time_h, time_m, time_s)
+
+    def timeToString(self, timeInfo):
+        result = []
+        h, m, s = timeInfo
+        if h > 0:
+            result.append("{}h".format(h))
+        if h < 100:
+            result.append("{}m".format(m))
+        if h <= 0:
+            result.append("{}s".format(s))
+        return "+".join(result)
+
+    def maxExp(self, level):
+        return 1500 * level
+
+    def strlize(self, num):
+        if (num >= 1000):
+            return "{:.1f}K".format(num / 1000)
+        elif (num >= 1000000):
+            return "{:.1f}M".format(num / 1000000)
+        else:
+            return "{:.1f}".format(num)
 
 
 class ServerInfo:

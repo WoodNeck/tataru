@@ -10,7 +10,7 @@ from discord.ext import commands
 from cogs.utils.session import Session, Page
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.military_info import MilitaryInfo, Military, Airforce, PublicService
-from urllib.error.URLError import URLError
+from urllib.error import URLError
 
 
 class General():

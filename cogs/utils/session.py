@@ -11,7 +11,7 @@ class Session:
     """
     공용 세션 클래스
     """
-    def __init__(self, bot, msg, pages=None, max_time=30, color=0xDEADBF, show_footer=False, is_embed=True, footer_format=None):
+    def __init__(self, bot, msg, pages=None, max_time=30, color=0xDEADBF, show_footer=False, is_embed=True):
         self._index = 0
         self._bot = bot
         self._cmdMsg = msg
@@ -24,7 +24,6 @@ class Session:
         self._is_embed = is_embed
         self._sessionMsg = None
         self._footer = show_footer
-        self._footerFormat = footer_format
         self._shouldEnd = False
 
     def addEmoji(self, emoji, callback, pos=None):
@@ -79,6 +78,12 @@ class Session:
                 em.set_image(url=page.image)
             if page.thumb:
                 em.set_thumbnail(url=page.thumb)
+            if page.authorInfo:
+                em.set_author(
+                    name=page.authorInfo.name,
+                    url=page.authorInfo.url,
+                    icon_url=page.authorInfo.icon_url,
+                )
             if self._footer:
                 if page.footer:
                     footer = page.footer
@@ -132,11 +137,19 @@ class Session:
         await self._bot.remove_reaction(self._sessionMsg, emoji, self._author)
 
 
+class AuthorInfo:
+    def __init__(self, name=None, url=None, icon_url=None):
+        self.name = name
+        self.url = url
+        self.icon_url = icon_url
+
+
 class Page:
-    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None):
+    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, authorInfo: AuthorInfo = None, footer_format=None):
         self.title = title
         self.desc = desc
         self.url = url
         self.image = image
         self.thumb = thumb
+        self.authorInfo = authorInfo
         self.footer = footer_format
