@@ -1,6 +1,7 @@
 import discord
 import urllib
 
+
 class StatSession:
     '''
     페이지별 포맷이 다른 Session
@@ -14,9 +15,11 @@ class StatSession:
         nickname = self.stat["nickname"]
         encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
         em = discord.Embed(colour=0xDEADBF)
-        em.set_author(name="{}{}의 스텟 정보에용".format(self.stat["clan"], nickname),
-        url="http://gg2statsapp.appspot.com/profile?id={}".format(encodedNickname),
-        icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname))
+        em.set_author(
+            name="{}{}의 스텟 정보에용".format(self.stat["clan"], nickname),
+            url="http://gg2statsapp.appspot.com/profile?id={}".format(encodedNickname),
+            icon_url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname)
+        )
         em.set_footer(text="{}({}/{})".format(self.pages[self.index].__doc__, self.index + 1, len(self.pages)))
         return em
 
@@ -40,7 +43,7 @@ class StatSession:
         encodedNickname = urllib.parse.quote(nickname.encode("utf-8"))
         region = self.stat["region"][:2].lower()
         kda = (self.stat["kill"] + self.stat["assist"]) / max(self.stat["death"], 1)
-        h, m , d = self.parseTime("time_total")
+        h, m, d = self.parseTime("time_total")
 
         em = self.makeEmbed()
         em.set_thumbnail(url="http://gg2statsapp.appspot.com/avatar?nickname={}".format(encodedNickname))
@@ -50,7 +53,7 @@ class StatSession:
         if self.stat["title"]:
             desc.append("\"{}\"".format(self.stat["title"]))
         desc.append("`LEVEL` **{}** `EXP` **{}** / **{}** `COIN` **{}**".format(self.stat["level"], self.stat["exp"], self.maxExp(), self.stat["coin"]))
-        desc.append("**{}**시간 **{}**분 **{}**초동안 **{}**판 플레이".format(h, m , d, self.stat["playcount"]))
+        desc.append("**{}**시간 **{}**분 **{}**초동안 **{}**판 플레이".format(h, m, d, self.stat["playcount"]))
         desc.append("🔫: **{}**, 💀: **{}**, 🤝: **{}**, `KDA`: **{:.2f}**".format(self.stat["kill"], self.stat["death"], self.stat["assist"], kda))
         desc.append("🚩: **{}**, 🛡️: **{}**, 💥: **{}**".format(self.stat["capture"], self.stat["defense"], self.stat["destruction"]))
         desc.append("🗡️: **{}**, ♥️: **{}**, 🌟: **{}**".format(self.stat["stab"], self.strlize(self.stat["healing"]), self.stat["invuln"]))
@@ -121,17 +124,17 @@ class StatSession:
         time_s = 0
         if user_time // 108000:
             time_h = user_time // 108000
-            user_time -= 108000*time_h
+            user_time -= 108000 * time_h
         if user_time // 1800 and time_h < 100:
             time_m = user_time // 1800
-            user_time -= 1800*time_m
+            user_time -= 1800 * time_m
         if not time_h:
             time_s = user_time // 30
         return (time_h, time_m, time_s)
 
     def timeToString(self, timeInfo):
         result = []
-        h, m ,s = timeInfo
+        h, m, s = timeInfo
         if h > 0:
             result.append("{}h".format(h))
         if h < 100:
@@ -141,7 +144,7 @@ class StatSession:
         return "+".join(result)
 
     def maxExp(self):
-    	return 1500 * self.stat["level"]
+        return 1500 * self.stat["level"]
 
     def strlize(self, num):
         if (num >= 1000):

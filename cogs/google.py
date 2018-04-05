@@ -1,14 +1,15 @@
-import discord
 import urllib
 import json
+import logging
 from discord.ext import commands
 from .sound import Sound
 from cogs.utils.session import Session, Page
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_type import MusicType
-from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
+from urllib.error.URLError import URLError
 from bs4 import BeautifulSoup
+
 
 class Google:
     def __init__(self, bot):
@@ -52,13 +53,13 @@ class Google:
             return link, end_quote
         else:
             start_line = s.find('"class="rg_meta"')
-            start_content = s.find('"ou"',start_line+1)
-            end_content = s.find(',"ow"',start_content+1)
+            start_content = s.find('"ou"', start_line + 1)
+            end_content = s.find(',"ow"', start_content + 1)
             if start_content == -1 or end_content == 0:
                 end_quote = 0
                 link = "no_links"
                 return link, end_quote
-            content_raw = str(s[start_content+6:end_content-1])
+            content_raw = str(s[start_content + 6: end_content - 1])
             return content_raw, end_content
 
     def findAllImages(self, page):
@@ -90,18 +91,19 @@ class Google:
                 return
             searchText = " ".join(args[1:])
             if "list=" in searchText:
-                playListId = searchText[searchText.find("list=")+5:].rstrip("&")
+                playListId = searchText[searchText.find("list=") + 5:].rstrip("&")
                 url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={}&key={}".format(playListId, self.youtube_key)
                 http = HTTPHandler()
                 try:
                     response = http.get(url, None)
-                except:
-                    self.bot.say("주소가 올바르지 않아용")
+                except URLError as error:
+                    await self.bot.say("주소가 올바르지 않아용")
+                    logging.error(str(error))
                     return
                 response_body = json.loads(response.read().decode())
                 _videos = response_body.get("items")
                 if not _videos:
-                    await self.bot.say("주소가 올바르지 않아용")
+                    await self.bot.say("검색결과가 없어용")
                     return
                 videos = []
                 for video in _videos:
@@ -124,7 +126,7 @@ class Google:
                 return
             session = Session(self.bot, ctx.message, videos, is_embed=False)
             playBtnCallback = lambda: self.playVideo(ctx, session)
-            session.addEmoji("▶", callback=playBtnCallback , pos=1)
+            session.addEmoji("▶", callback=playBtnCallback, pos=1)
             await session.start()
 
     def searchVideos(self, searchText):
@@ -138,9 +140,12 @@ class Google:
         videos = []
         for videoDOM in videoDOMs:
             url = videoDOM.find('a').get("href")
-            if not "user" in url and not "list" in url and not "channel" in url and not "googleads" in url:
+            if self.isVideo(url):
                 videos.append(self.parseVideo(videoDOM))
         return videos
+
+    def isVideo(self, url):
+        return "user" not in url and "list" not in url and "channel" not in url and "googleads" not in url
 
     def parseVideo(self, video):
         videoTitle = video.find('a').get("title")
@@ -154,12 +159,14 @@ class Google:
         await session.deleteMsg()
         await Sound.instance.play(ctx, MusicType.YOUTUBE, video.videoUrl, video.videoTitle, video.videoTime)
 
+
 class Video(Page):
     def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None, video_title=None, video_time=None):
         super(Video, self).__init__(title, desc, None, image, thumb, footer_format)
         self.videoUrl = url
         self.videoTitle = video_title
         self.videoTime = video_time
+
 
 def setup(bot):
     cog = Google(bot)

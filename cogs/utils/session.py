@@ -1,9 +1,11 @@
 from discord import Embed
 
+
 class SessionEmoji:
     PREV = "⬅"
     NEXT = "➡"
     DELETE = "❌"
+
 
 class Session:
     """
@@ -67,11 +69,16 @@ class Session:
         page = self._pages[self._index]
         if self._is_embed:
             em = Embed(colour=self._embedColor)
-            if page.title: em.title = page.title
-            if page.desc: em.description = page.desc
-            if page.url: em.url = page.url
-            if page.image: em.set_image(url=page.image)
-            if page.thumb: em.set_thumbnail(url=page.thumb)
+            if page.title:
+                em.title = page.title
+            if page.desc:
+                em.description = page.desc
+            if page.url:
+                em.url = page.url
+            if page.image:
+                em.set_image(url=page.image)
+            if page.thumb:
+                em.set_thumbnail(url=page.thumb)
             if self._footer:
                 if page.footer:
                     footer = page.footer
@@ -123,6 +130,7 @@ class Session:
         else:
             await self._bot.edit_message(self._sessionMsg, new_content=msg)
         await self._bot.remove_reaction(self._sessionMsg, emoji, self._author)
+
 
 class Page:
     def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None):

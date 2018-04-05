@@ -3,11 +3,12 @@ import datetime
 from pathlib import Path
 from dateutil.relativedelta import relativedelta
 
+
 class MilitaryInfo:
     def __init__(self):
         self.path = "military_info.json"
         self.servers = dict()
-    
+
     def setData(self, serverId, key, value):
         targetServer = self.servers.get(serverId)
         if not targetServer:
@@ -50,10 +51,11 @@ class MilitaryInfo:
         f.write(json.dumps(infoToDump))
         f.close()
 
+
 class Military:
     def __init__(self, startDate):
         self.startDate = startDate
-    
+
     def getStartDate(self):
         return self.startDate
 
@@ -62,12 +64,13 @@ class Military:
 
     def getEmojiSet(self):
         return ("💖", "🖤")
-    
+
     def getSymbol(self):
         return "🔫"
 
     def encode(self):
         return {"class": "Military", "startDate": self.startDate.strftime("%Y/%m/%d")}
+
 
 class Airforce(Military):
     def getDischargeDate(self):
@@ -78,9 +81,10 @@ class Airforce(Military):
 
     def getSymbol(self):
         return "✈️"
-    
+
     def encode(self):
         return {"class": "Airforce", "startDate": self.startDate.strftime("%Y/%m/%d")}
+
 
 class PublicService(Military):
     def getEmojiSet(self):

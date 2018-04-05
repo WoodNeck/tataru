@@ -9,7 +9,6 @@ from .sound import Sound
 from cogs.utils.botconfig import BotConfig
 from cogs.utils.observable import Observable
 from cogs.utils.music_type import MusicType
-from cogs.utils.music_player import MusicPlayer
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.html_stripper import HTMLStripper
 
@@ -19,7 +18,7 @@ class Naver(Observable):
         self.bot = bot
         self.naverClient = dict()
         self.bot.listenPublicMsg(self)
-    
+
     def setNaverClient(self, clientId, clientSecret):
         self.naverClient["X-Naver-Client-Id"] = clientId
         self.naverClient["X-Naver-Client-Secret"] = clientSecret
@@ -37,7 +36,7 @@ class Naver(Observable):
         http = HTTPHandler()
         response = http.get(url, self.naverClient)
         rescode = response.getcode()
-        if (rescode==200):
+        if (rescode == 200):
             response_body = response.read().decode()
             response_body = json.loads(response_body)
             items = response_body["items"]
@@ -53,7 +52,7 @@ class Naver(Observable):
             await self.bot.send_message(ctx.message.channel, embed=em)
         else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read().decode("utf-8")))
-    
+
     async def update(self, message):
         args = message.content.split()
         data = await self.checkTranslateMessage(args, message.channel)
@@ -95,14 +94,14 @@ class Naver(Observable):
                 return (lang, url, text)
             else:
                 await self.bot.send_message(channel, "번역할 문장을 말해주세용")
-    
+
     def checkLang(self, lang):
         translateAbleLang = ["영어", "중국어", "일본어"]
         if lang in translateAbleLang:
             return True
         else:
             return False
-    
+
     def checkMethod(self, method):
         availableMethod = ["번역해줘", "기계번역해줘"]
         if method in availableMethod:
@@ -126,7 +125,7 @@ class Naver(Observable):
         http = HTTPHandler()
         response = http.post(url, self.naverClient, data)
         rescode = response.getcode()
-        if(rescode==200):
+        if(rescode == 200):
             response_body = response.read().decode("utf-8")
             response_body = json.loads(response_body)
             em = discord.Embed(description="{} {}".format(translateFlag[lang], response_body["message"]["result"]["translatedText"]), colour=0xDEADBF)
@@ -144,7 +143,7 @@ class Naver(Observable):
             http = HTTPHandler()
             response = http.get(url, self.naverClient)
             rescode = response.getcode()
-            if (rescode==200):
+            if (rescode == 200):
                 response_body = response.read().decode("utf-8")
                 response_body = json.loads(response_body)
                 if len(response_body["aResult"]):
@@ -176,8 +175,8 @@ class Naver(Observable):
 
         url_face = "https://openapi.naver.com/v1/vision/face"
         url_celebrity = "https://openapi.naver.com/v1/vision/celebrity"
-        
-        f = open(tempDir,"wb")
+
+        f = open(tempDir, "wb")
         http = HTTPHandler()
         image_url = args
         image = http.get(image_url, headers={"User-Agent": "Mozilla/5.0"})
@@ -199,21 +198,20 @@ class Naver(Observable):
             em.set_image(url=args)
             if response_celebrity["info"]["faceCount"]:
                 celebrity = response_celebrity["faces"][0]["celebrity"]
-                em.add_field(name="닮은꼴 연예인", value="**{}**을(를) 닮았어용!({:.1f}%)".format(celebrity["value"], 100*celebrity["confidence"]))
+                em.add_field(name="닮은꼴 연예인", value="**{}**을(를) 닮았어용!({:.1f}%)".format(celebrity["value"], 100 * celebrity["confidence"]))
             if response_face["info"]["faceCount"]:
                 age = response_face["faces"][0]["age"]
-                em.add_field(name="나이", value="**{}**살 같아용!({:.1f}%)".format(age["value"], 100*age["confidence"]))
+                em.add_field(name="나이", value="**{}**살 같아용!({:.1f}%)".format(age["value"], 100 * age["confidence"]))
                 gender = response_face["faces"][0]["gender"]
-                em.add_field(name="성별", value="**{}**인 것 같아용!({:.1f}%)".format(GENDER[gender["value"]], 100*gender["confidence"]))
+                em.add_field(name="성별", value="**{}**인 것 같아용!({:.1f}%)".format(GENDER[gender["value"]], 100 * gender["confidence"]))
                 emotion = response_face["faces"][0]["emotion"]
-                em.add_field(name="감정", value="**{}** 것 같아용!({:.1f}%)".format(EMOTION[emotion["value"]], 100*emotion["confidence"]))
+                em.add_field(name="감정", value="**{}** 것 같아용!({:.1f}%)".format(EMOTION[emotion["value"]], 100 * emotion["confidence"]))
             await self.bot.send_message(ctx.message.channel, embed=em)
         else:
             if (rescode_face != 200):
                 await self.bot.say("얼굴인식에 실패했어용: {}".format(response_face["errorMessage"]))
             elif (rescode_celebrity != 200):
                 await self.bot.say("얼굴인식에 실패했어용: {}".format(response_celebrity["errorMessage"]))
-        
         await self.bot.delete_message(ctx.message)
 
     @commands.command(pass_context=True)
@@ -238,15 +236,15 @@ class Naver(Observable):
                 await self.bot.say("검색결과가 없어용")
         else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read().decode("utf-8")))
-    
-    @commands.command(pass_context=True)        
+
+    @commands.command(pass_context=True)
     async def tts(self, ctx, *args):
         if len(args) == 0:
             await self.bot.say("말할 내용을 추가로 입력해주세용")
             return
         ttsText = " ".join([arg for arg in args])
         encText = urllib.parse.quote(ttsText)
-        data = "speaker=jinho&speed=0&text=" + encText;
+        data = "speaker=jinho&speed=0&text=" + encText
         url = "https://openapi.naver.com/v1/voice/tts.bin"
 
         http = HTTPHandler()
@@ -261,6 +259,7 @@ class Naver(Observable):
             await Sound.instance.play(ctx, MusicType.TTS, fileDir, ttsText)
         else:
             self.bot.say("음성 다운로드에 실패했어용")
+
 
 def setup(bot):
     naver = Naver(bot)

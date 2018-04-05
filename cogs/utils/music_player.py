@@ -6,6 +6,7 @@ import subprocess
 from .music_type import MusicType
 from .music_queue import MusicQueue
 
+
 class MusicPlayer:
     def __init__(self, cog, voiceClient, server, channel):
         self.queue = MusicQueue()

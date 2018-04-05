@@ -3,14 +3,15 @@ import json
 import urllib
 import asyncio
 import datetime
-from discord.ext import commands
-from cogs.utils.session import Session, Page
-from cogs.utils.http_handler import HTTPHandler
-from cogs.utils.military_info import *
-from pathlib import Path
 from random import choice
 from random import randint
 from bs4 import BeautifulSoup
+from discord.ext import commands
+from cogs.utils.session import Session, Page
+from cogs.utils.http_handler import HTTPHandler
+from cogs.utils.military_info import MilitaryInfo, Military, Airforce, PublicService
+from urllib.error.URLError import URLError
+
 
 class General():
     def __init__(self, bot):
@@ -32,7 +33,7 @@ class General():
         await self.bot.say("http://{}:8000/".format(ip))
 
     @commands.command(pass_context=True)
-    async def 주사위(self, ctx, number : int = 100):
+    async def 주사위(self, ctx, number: int = 100):
         author = ctx.message.author
         if number > 1:
             n = randint(1, number)
@@ -55,7 +56,7 @@ class General():
     @commands.command(pass_context=True)
     async def 따귀(self, ctx, arg):
         await self.bot.say("{}의 뺨을 후려갈겼어용".format(arg))
-        
+
     @commands.command(pass_context=True)
     async def 전역일(self, ctx, arg):
         if arg == "추가해줘":
@@ -80,7 +81,7 @@ class General():
                 percentVisualization.append(doneEmoji * doneCount)
                 percentVisualization.append(yetEmoji * (100 - doneCount))
                 percentVisualization = "".join(percentVisualization)
-                
+
                 desc = """
                     {}\n입대일: {}\n전역일: {}\n복무한 날: {}일\n남은 날: {}일\n오늘까지 복무율: {:.2f}%
                 """.format(percentVisualization, ipdae.strftime("%Y-%m-%d"), discharge.strftime("%Y-%m-%d"), accomplished.days, left.days, donePercentage)
@@ -89,17 +90,17 @@ class General():
                 await self.bot.send_message(ctx.message.channel, embed=em)
             else:
                 await self.bot.say("그 이름은 등록되어있지 않아용")
-    
+
     async def addDischargeInfo(self, ctx):
         name = await self.checkName(ctx)
         if not name:
             await self.bot.say("취소되었어용")
             return
-        
+
         startDate = await self.checkStartDate(ctx)
         if not startDate:
             return
-        
+
         info = await self.checkArmyType(ctx, startDate)
         if not info:
             await self.bot.say("취소되었어용")
@@ -115,7 +116,7 @@ class General():
         if msg and msg.content:
             name = msg.content
             return name
-    
+
     async def checkStartDate(self, ctx):
         await self.bot.say("입대일자를 YYYY/MM/DD 양식으로 말해주세용")
         msg = await self.bot.wait_for_message(author=ctx.message.author, timeout=30)
@@ -128,7 +129,7 @@ class General():
             except Exception as e:
                 await self.bot.say("올바른 양식(YYYY/MM/DD)이 아닌 것 같아용")
                 return
-    
+
     async def checkArmyType(self, ctx, startDate):
         available = ["육군", "공군", "공익"]
         availableFormatted = ["`{}`".format(m) for m in available]
@@ -155,7 +156,7 @@ class General():
         diff = sunung - now
         desc = """
             {}시간 {}분 {}초 남았어용
-        """.format(diff.days * 24 + diff.seconds // 3600, (diff.seconds % 3600) // 60, diff.seconds %  60)
+        """.format(diff.days * 24 + diff.seconds // 3600, (diff.seconds % 3600) // 60, diff.seconds % 60)
 
         em = discord.Embed(title="⏰2018학년도 대학수학능력시험까지 D-{}".format(diff.days), description=desc, colour=0xDEADBF)
         await self.bot.send_message(ctx.message.channel, embed=em)
@@ -189,7 +190,7 @@ class General():
         optionEmojis = optionEmojis[:len(options)]
         for emoji in optionEmojis:
             await self.bot.add_reaction(msg, emoji)
-        
+
         await asyncio.sleep(60)
 
         msg = await self.bot.get_message(ctx.message.channel, msg.id)
@@ -197,16 +198,18 @@ class General():
         reactions = {}
         for reaction in msg.reactions:
             reactions[reaction.emoji] = reaction.count
-        
+
         result = discord.Embed(colour=0xDEADBF, title="🤔: {}? 에 대한 투표 결과에용".format(question))
         optionCnt = 0
         for option in options:
-            result.add_field(name="{}: {}".format(optionEmojis[optionCnt], options[optionCnt]),
-            value="{}표".format(reactions.get(optionEmojis[optionCnt]) - 1))
+            result.add_field(
+                name="{}: {}".format(optionEmojis[optionCnt], options[optionCnt]),
+                value="{}표".format(reactions.get(optionEmojis[optionCnt]) - 1)
+            )
             optionCnt += 1
 
         await self.bot.send_message(ctx.message.channel, embed=result)
-    
+
     @commands.command(pass_context=True)
     async def 나무위키(self, ctx, *args):
         await self.bot.send_typing(ctx.message.channel)
@@ -219,10 +222,10 @@ class General():
         http = HTTPHandler()
         try:
             response = http.get(url, None)
-        except:
+        except URLError:
             await self.bot.say("문서가 존재하지 않아용")
             return
-        
+
         html = BeautifulSoup(response.read().decode(), 'html.parser')
         content = html.find("article")
         for br in content.find_all("br"):
@@ -239,9 +242,25 @@ class General():
             for ul in desc.find_all("ul", recursive=False):
                 self.sanitizeUl(ul)
 
+        unorderedArticleDOM = content.find("div", {"class": "wiki-inner-content"})  # 넘버링된 Article들 위의 문단
+        articles = self.checkUnorderedArticles(unorderedArticleDOM, title, url)
+
+        for i in range(len(items)):
+            desc = descs[i].get_text()[:2000]
+            if desc:
+                page = Page(title=title, desc=desc, url="{}#s-{}".format(url, indexes[i]), footer_format=items[i])
+                articles.append(page)
+
+        if not articles:
+            await self.bot.say("문서가 존재하지 않아용")
+            return
+
+        session = Session(self.bot, ctx.message, pages=articles, max_time=60, show_footer=True)
+        await session.start()
+
+    def checkUnorderedArticles(self, dom, title, url):
         articles = []
-        prev_article = content.find("div", {"class": "wiki-inner-content"}) #넘버링된 Article들 위의 문단
-        for article in prev_article.find_all("p", recursive=False):
+        for article in dom.find_all("p", recursive=False):
             if article.name == "p":
                 if article.find("div"):
                     break
@@ -255,30 +274,19 @@ class General():
                 if desc:
                     page = Page(title=title, desc=desc, url=url, footer_format="")
                     articles.append(page)
-        
-        for i in range(len(items)):
-            desc = descs[i].get_text()[:2000]
-            if desc:
-                page = Page(title=title, desc=desc, url="{}#s-{}".format(url, indexes[i]), footer_format=items[i])
-                articles.append(page)
+        return articles
 
-        if not articles:
-            await self.bot.say("문서가 존재하지 않아용")
-            return
-
-        session = Session(self.bot, ctx.message, pages=articles, max_time=60, show_footer=True)
-        await session.start()
-        
-    def sanitizeUl(self, ul, depth = 0):
+    def sanitizeUl(self, ul, depth=0):
         for li in ul.find_all("li"):
             self.sanitizeLi(li, depth)
         ul.string = "{}".format(ul.get_text())
 
-    def sanitizeLi(self, li, depth = 0):
+    def sanitizeLi(self, li, depth=0):
         icon = ["●", "○", "■"]
         for ul in li.find_all("ul"):
             self.sanitizeUl(ul, depth + 1)
-        li.string = "\n{}{} {}".format("　"*depth, icon[depth % 3], li.get_text())
+        li.string = "\n{}{} {}".format("　" * depth, icon[depth % 3], li.get_text())
+
 
 def setup(bot):
     general = General(bot)

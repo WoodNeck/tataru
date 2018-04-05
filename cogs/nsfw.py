@@ -1,9 +1,9 @@
 import discord
-import functools
 from discord.ext import commands
 from cogs.utils.session import Session, Page
 from cogs.utils.http_handler import HTTPHandler
 from bs4 import BeautifulSoup
+
 
 class NSFW():
     def __init__(self, bot):
@@ -16,7 +16,7 @@ class NSFW():
             return
         try:
             index = int(index)
-        except:
+        except ValueError:
             self.bot.say("제대로 된 숫자를 인자로 주세용")
             return
         await self.bot.send_typing(ctx.message.channel)
@@ -83,24 +83,23 @@ class NSFW():
             await self.bot.delete_message(msg)
             await self.bot.delete_message(ctx.message)
             return
-    
+
     async def readHitomi(self, cmdMsg, index, images, em):
         images = [image.string for image in images]
-        images = [image[image.rfind("/")+1:] for image in images]
-        imageCnt = len(images)
+        images = [image[image.rfind("/") + 1:] for image in images]
 
         if index % 2:
             url = "https://ba.hitomi.la/galleries/{}/{}"
         else:
             url = "https://aa.hitomi.la/galleries/{}/{}"
-        
+
         images = [Page(image=url.format(index, image)) for image in images]
         session = Session(self.bot, cmdMsg, images, max_time=60, show_footer=True)
         await session.start()
-    
+
     def isNSFW(self, channel):
         return channel.name.startswith("nsfw")
-    
+
     def getMetaInfo(self, meta):
         aTag = meta.find('a')
         if aTag:
@@ -110,7 +109,7 @@ class NSFW():
             if not string:
                 string = "N/A"
             return string.strip()
-    
+
     def getAllMetaInfo(self, meta):
         aTags = meta.find_all('a')
         if aTags:
@@ -126,6 +125,7 @@ class NSFW():
 
     async def alertOnlyInNSFW(self, channel):
         await self.bot.send_message(channel, "`nsfw`채널에서만 사용 가능한 명령어에용")
+
 
 def setup(bot):
     cog = NSFW(bot)

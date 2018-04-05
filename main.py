@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
-import logging
 import discord
+import logging
 from cogs.utils.observer import Observer
 from cogs.utils.botconfig import BotConfig
 from discord.ext import commands
 
 des = "타타루에용"
 prefix = "타타루 "
+
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -35,6 +35,7 @@ class Bot(commands.Bot):
     async def updatePublic(self, message):
         await self.publicMsgObserver.update(message)
 
+
 def initialize(bot_class=Bot):
     bot = bot_class(description=des)
 
@@ -43,15 +44,6 @@ def initialize(bot_class=Bot):
         print("{}".format(discord.version_info))
         print("{} 준비 다됬어용".format(bot.user))
         await bot.change_presence(game=discord.Game(name="{}".format(prefix)))
-
-    async def process_commands(self, message):
-        ctx = await self.get_context(message, cls=context.Context)
-
-        if ctx.command is None:
-            return
-
-        async with ctx.acquire():
-            await self.invoke(ctx)
 
     @bot.event
     async def on_message(message):
@@ -74,8 +66,8 @@ def initialize(bot_class=Bot):
         elif isinstance(error, commands.DisabledCommand):
             await bot.send_message(channel, "비활성화된 명령어에용.")
         elif isinstance(error, commands.CommandInvokeError):
-            await bot.send_message(channel, str(error))
-            print(error)
+            await bot.send_message(channel, "명령어 실행에 실패했어용")
+            logging.error(str(error))
         elif isinstance(error, commands.CommandNotFound):
             pass
         elif isinstance(error, commands.CheckFailure):
@@ -87,6 +79,7 @@ def initialize(bot_class=Bot):
                                             "{:.2f}초 뒤에 다시 해주세용"
                                             "".format(error.retry_after))
     return bot
+
 
 def load_cogs(bot):
     extensions = []
@@ -105,6 +98,7 @@ def load_cogs(bot):
     if failed:
         print("\n{}를 로드하는데 실패했어용.\n".format(" ".join(failed)))
 
+
 if __name__ == '__main__':
     bot = initialize()
     load_cogs(bot)
@@ -113,5 +107,7 @@ if __name__ == '__main__':
     config = BotConfig()
     token = config.request("BotUser", "Token")
     config.save()
+
+    logging.basicConfig(filename='./tataru.log', level=logging.DEBUG)
 
     bot.run(token)

@@ -2,9 +2,11 @@ import discord
 import urllib
 import json
 from discord.ext import commands
+from random import randint
 from cogs.utils.observable import Observable
 from cogs.utils.http_handler import HTTPHandler
 from cogs.utils.stat_session import StatSession
+
 
 class GG2(Observable):
     def __init__(self, bot):
@@ -37,16 +39,16 @@ class GG2(Observable):
                     if 0 <= num <= 29:
                         with open("./data/gg2/{}.png".format(content), "rb") as f:
                             await self.bot.send_file(message.channel, f)
-                except:
+                except Exception:
                     return
-    
+
     @commands.command(pass_context=True)
     async def 갱게서버(self, ctx):
         GG2_LOBBY_URL = "http://www.ganggarrison.com/lobby/status"
         http = HTTPHandler()
         response = http.get(GG2_LOBBY_URL, None)
         rescode = response.getcode()
-        if (rescode==200):
+        if (rescode == 200):
             response_body = response.read().decode()
             serverList = self.findServerList(response_body)
             em = discord.Embed(title="현재 GG2 로비 정보에용", colour=0xDEADBF)
@@ -63,7 +65,7 @@ class GG2(Observable):
             await self.bot.send_message(ctx.message.channel, embed=em)
         else:
             await self.bot.say("오류가 발생했어용\n{}".format(response.read().decode("utf-8")))
-    
+
     def findServerList(self, body):
         serverList = []
         serverTable = body.find("<tbody>")
@@ -81,20 +83,20 @@ class GG2(Observable):
 
         while (serverNext > 0):
             server = ServerInfo()
-            cell = findNextCell(body, serverNext) # Exclude Blank Cell
+            cell = findNextCell(body, serverNext)  # Exclude Blank Cell
 
-            cell = findNextCell(body, cell)       # Name
+            cell = findNextCell(body, cell)  # Name
             server.name = getCellContent(body, cell)
 
-            cell = findNextCell(body, cell)       # Map
+            cell = findNextCell(body, cell)  # Map
             server.map = getCellContent(body, cell)
 
-            cell = findNextCell(body, cell)       # PlayerInfo
+            cell = findNextCell(body, cell)  # PlayerInfo
             playerInfo = getCellContent(body, cell).split("/")
             server.current = int(playerInfo[0])
             server.max = int(playerInfo[1])
 
-            cell = findNextCell(body, cell)       # Mod
+            cell = findNextCell(body, cell)  # Mod
             modInfo = getCellContent(body, cell)
             modStart = modInfo.find(">") + 1
             modEnd = modInfo.rfind("</a>")
@@ -102,7 +104,7 @@ class GG2(Observable):
             serverList.append(server)
 
             serverNext = body.find("<tr>", serverNext) + 1
-        
+
         return serverList
 
     @commands.command(pass_context=True)
@@ -155,6 +157,7 @@ class GG2(Observable):
                 await self.bot.delete_message(ctx.message)
                 return
 
+
 class ServerInfo:
     def __init__(self):
         self.name = None
@@ -162,6 +165,7 @@ class ServerInfo:
         self.mod = None
         self.current = None
         self.max = None
+
 
 def setup(bot):
     cog = GG2(bot)
