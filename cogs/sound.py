@@ -21,7 +21,6 @@ class Sound:
         self.lock = asyncio.Lock()
         self.musicPlayers = dict()
         self.SOUND_PATH = "./data/mutable/sound"
-        load_opus_lib()
 
     async def joinVoice(self, ctx):
         try:
@@ -178,4 +177,6 @@ def load_opus_lib(opus_libs=OPUS_LIBS):
 
 def setup(bot):
     cog = Sound(bot)
+    if not __debug__:
+        load_opus_lib()
     bot.add_cog(cog)

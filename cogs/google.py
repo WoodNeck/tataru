@@ -170,7 +170,8 @@ class Video(Page):
 
 def setup(bot):
     cog = Google(bot)
-    config = BotConfig()
-    cog.youtube_key = config.request("Youtube", "API_KEY")
-    config.save()
+    if not __debug__:
+        config = BotConfig()
+        cog.youtube_key = config.request("Youtube", "API_KEY")
+        config.save()
     bot.add_cog(cog)
