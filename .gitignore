@@ -116,3 +116,6 @@ obsolete/
 
 # mutable data files
 data/mutable
+
+# pytest cache
+.pytest_cache/*
