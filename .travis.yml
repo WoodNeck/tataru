@@ -13,6 +13,5 @@ before_install:
   - "python setup.py install"
 install:
   - pip install -r requirements.txt
-  - pip install .
 script:
   - pytest
