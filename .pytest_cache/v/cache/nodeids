@@ -1,3 +1,3 @@
 [
-  "test/test_sample.py::test_answer"
+  "test/test_runnability.py::test_load_cog"
 ]

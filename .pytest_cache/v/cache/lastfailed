@@ -1,3 +1,4 @@
 {
-  "test/test_runnability.py": true
+  "test_runnability.py": true,
+  "test_runnability.py::test_load_cog": true
 }

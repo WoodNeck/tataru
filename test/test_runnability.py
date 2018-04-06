@@ -1,7 +1,9 @@
 import sys
-from ... import Bot
+sys.path.append('.')
+import tataru.main
+
 
 def test_load_cog():
-    bot = main.initialize()
-    failed_cogs = main.load_cogs(bot)
+    bot = tataru.main.initialize()
+    failed_cogs = tataru.main.load_cogs(bot)
     assert(len(failed_cogs) == 0)
