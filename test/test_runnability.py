@@ -1,7 +1,8 @@
 import sys
-sys.path.append('.')
-sys.path.append('.')
-import main
+import os
+sys.path.append(os.path.abspath(os.curdir))
+print(os.getcwd())
+from .. import main
 
 
 def test_load_cog():

@@ -101,7 +101,6 @@ ENV/
 .mypy_cache/
 
 # project controlled files
-main.py
 config.ini
 military_info.json
 
