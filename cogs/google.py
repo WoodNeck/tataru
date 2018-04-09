@@ -1,13 +1,9 @@
 import urllib
-import json
-import logging
 from discord.ext import commands
 from .sound import Sound
 from cogs.utils.session import Session, Page
-from cogs.utils.botconfig import BotConfig
 from cogs.utils.music_type import MusicType
 from cogs.utils.http_handler import HTTPHandler
-from urllib.error import URLError
 from bs4 import BeautifulSoup
 
 

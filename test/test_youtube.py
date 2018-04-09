@@ -1,6 +1,13 @@
-from cogs.utils.http_handler import HTTPHandler
+from cogs.google import Google
 
 
 def test_youtube_url():
-    urls = ["https://www.youtube.com/playlist?list=", "https://www.youtube.com/playlist?list=426"]
-    http = HTTPHandler()
+    cog = Google(None)
+    not_okay_ids = ["", 426, 0, "SomeNotValidUrl"]
+    for listId in not_okay_ids:
+        videos = cog.searchVideoList(listId)
+        assert(len(videos) == 0)
+    good_ids = ["LLxhtmDROwDNmTIPPBARYW4A", "UUxhtmDROwDNmTIPPBARYW4A"]
+    for listId in good_ids:
+        videos = cog.searchVideoList(listId)
+        assert(len(videos) != 0)
