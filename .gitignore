@@ -102,7 +102,7 @@ ENV/
 
 # project controlled files
 config.ini
-military_info.json
+*.json
 
 # vscode
 .vscode/

@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 from discord.ext import commands
 from cogs.utils.session import Session, Page
 from cogs.utils.http_handler import HTTPHandler
-from cogs.utils.military_info import MilitaryInfo, Military, Airforce, PublicService
+from cogs.ds.ship_info import ShipInfo, ShipNotExistError, CrewNotExistError
+from cogs.ds.military_info import MilitaryInfo, Military, Airforce, PublicService
 from urllib.error import URLError
 
 
@@ -62,34 +63,7 @@ class General():
         if arg == "추가해줘":
             await self.addDischargeInfo(ctx)
         else:
-            name = arg
-            server = self.military.servers.get(ctx.message.server.id)
-            if server and name in server:
-                person = server[name]
-                ipdae = person.getStartDate()
-                discharge = person.getDischargeDate()
-                now = datetime.datetime.now().date()
-                accomplished = now - ipdae
-                left = discharge - now
-                total = discharge - ipdae
-                donePercentage = accomplished.days * 100 / total.days
-
-                percentVisualization = []
-                (doneEmoji, yetEmoji) = person.getEmojiSet()
-                doneCount = min(int(donePercentage), 100)
-
-                percentVisualization.append(doneEmoji * doneCount)
-                percentVisualization.append(yetEmoji * (100 - doneCount))
-                percentVisualization = "".join(percentVisualization)
-
-                desc = """
-                    {}\n입대일: {}\n전역일: {}\n복무한 날: {}일\n남은 날: {}일\n오늘까지 복무율: {:.2f}%
-                """.format(percentVisualization, ipdae.strftime("%Y-%m-%d"), discharge.strftime("%Y-%m-%d"), accomplished.days, left.days, donePercentage)
-
-                em = discord.Embed(title="{}{}의 복무정보에용".format(person.getSymbol(), name), description=desc, colour=0xDEADBF)
-                await self.bot.send_message(ctx.message.channel, embed=em)
-            else:
-                await self.bot.say("그 이름은 등록되어있지 않아용")
+            await self.printDischargeInfo(ctx)
 
     async def addDischargeInfo(self, ctx):
         name = await self.checkName(ctx)
@@ -109,6 +83,36 @@ class General():
         self.military.setData(ctx.message.server.id, name, info)
         em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
         await self.bot.send_message(ctx.message.channel, embed=em)
+    
+    async def printDischargeInfo(self, ctx):
+        name = arg
+        server = self.military.servers.get(ctx.message.server.id)
+        if server and name in server:
+            person = server[name]
+            ipdae = person.getStartDate()
+            discharge = person.getDischargeDate()
+            now = datetime.datetime.now().date()
+            accomplished = now - ipdae
+            left = discharge - now
+            total = discharge - ipdae
+            donePercentage = accomplished.days * 100 / total.days
+
+            percentVisualization = []
+            (doneEmoji, yetEmoji) = person.getEmojiSet()
+            doneCount = min(int(donePercentage), 100)
+
+            percentVisualization.append(doneEmoji * doneCount)
+            percentVisualization.append(yetEmoji * (100 - doneCount))
+            percentVisualization = "".join(percentVisualization)
+
+            desc = """
+                {}\n입대일: {}\n전역일: {}\n복무한 날: {}일\n남은 날: {}일\n오늘까지 복무율: {:.2f}%
+            """.format(percentVisualization, ipdae.strftime("%Y-%m-%d"), discharge.strftime("%Y-%m-%d"), accomplished.days, left.days, donePercentage)
+
+            em = discord.Embed(title="{}{}의 복무정보에용".format(person.getSymbol(), name), description=desc, colour=0xDEADBF)
+            await self.bot.send_message(ctx.message.channel, embed=em)
+        else:
+            await self.bot.say("그 이름은 등록되어있지 않아용")
 
     async def checkName(self, ctx):
         await self.bot.say("등록할 이름을 말해주세용")
@@ -286,6 +290,93 @@ class General():
         for ul in li.find_all("ul"):
             self.sanitizeUl(ul, depth + 1)
         li.string = "\n{}{} {}".format("　" * depth, icon[depth % 3], li.get_text())
+
+    @commands.command(pass_context=True)
+    async def 선원모집(self, ctx, *args):
+        shipName = args[0]
+        thumbUrl = None
+        embedColor = None
+        try:
+            maxCrew = int(args[1])
+        except ValueError:
+            await self.bot.say("최대인원은 정수로 주세용!")
+            return
+        if (len(args) > 2):
+            thumbUrl = args[2]
+        if (len(args) > 3):
+            try:
+                embedColor = int(args[3], 16)
+            except ValueError:
+                await self.bot.say("색은 16진수로 주세용 ex)0xDEADBF")
+                return
+
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        serverShipInfo.addOrModifyShip(shipName, maxCrew, ctx.message.author.id, thumbUrl, embedColor)
+        em = await serverShipInfo.shipInfo(shipName, self.bot)
+        await self.bot.send_message(ctx.message.channel, embed=em)
+
+    @commands.command(pass_context=True)
+    async def 승선(self, ctx, shipName):
+        await self.boardShip(ctx, shipName)
+
+    @commands.command(pass_context=True)
+    async def 탑승(self, ctx, shipName):
+        await self.boardShip(ctx, shipName)
+
+    async def boardShip(self, ctx, shipName):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        try:
+            serverShipInfo.addCrew(shipName, ctx.message.author.id)
+            em = await serverShipInfo.shipInfo(shipName, self.bot)
+            await self.bot.send_message(ctx.message.channel, embed=em)
+        except ShipNotExistError:
+            await self.bot.say("해당 이름의 배가 존재하지 않아용")
+
+    @commands.command(pass_context=True)
+    async def 탈주(self, ctx, shipName):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        try:
+            serverShipInfo.removeCrew(shipName, ctx.message.author.id)
+            await self.bot.say("{}에서 탈주했어용".format(shipName))
+        except ShipNotExistError:
+            await self.bot.say("해당 이름의 배가 존재하지 않아용")
+        except CrewNotExistError:
+            await self.bot.say("해당 배에 속해있지 않아용")
+
+    @commands.command(pass_context=True)
+    async def 출항(self, ctx, shipName):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        try:
+            crewNum = serverShipInfo.depart(shipName, ctx.message.author.id)
+            await self.bot.say("{}명의 용사와 함께 🚢{} 출항해용".format(crewNum, shipName))
+        except ShipNotExistError:
+            await self.bot.say("해당 이름의 배가 존재하지 않아용")
+        except CrewNotExistError:
+            await self.bot.say("해당 배에 속해있지 않아용")
+
+    @commands.command(pass_context=True)
+    async def 침몰(self, ctx, shipName):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        try:
+            serverShipInfo.removeShip(shipName, ctx.message.author.id)
+        except ShipNotExistError:
+            await self.bot.say("해당 이름의 배가 존재하지 않아용")
+
+    @commands.command(pass_context=True)
+    async def 배정보(self, ctx, shipName):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        try:
+            em = await serverShipInfo.shipInfo(shipName, self.bot)
+        except ShipNotExistError:
+            await self.bot.say("해당 이름의 배가 존재하지 않아용")
+        await self.bot.send_message(ctx.message.channel, embed=em)
+
+    @commands.command(pass_context=True)
+    async def 배목록(self, ctx):
+        serverShipInfo = ShipInfo(ctx.message.server.id)
+        ships = serverShipInfo.allShips()
+        if ships:
+            await self.bot.say(ships)
 
 
 def setup(bot):

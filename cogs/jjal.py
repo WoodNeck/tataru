@@ -68,7 +68,8 @@ class Jjal(Observable):
         if dirList:
             await self.bot.send_message(ctx.message.channel, "```{}```".format("\n".join(dirList)))
         else:
-            await self.bot.send_message(message.channel, "폴더가 하나도 추가되지 않았어용. 파일관리 명령어로 폴더를 추가해보세용")
+            await self.bot.send_message(ctx.message.channel, "폴더가 하나도 추가되지 않았어용. 파일관리 명령어로 폴더를 추가해보세용")
+
 
 def setup(bot):
     cog = Jjal(bot)
