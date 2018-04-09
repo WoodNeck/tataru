@@ -137,10 +137,11 @@ class Google:
         videoDOMs = html.find_all("tr", {"class": "pl-video"})
         for videoDOM in videoDOMs:
             title = videoDOM.get("data-title")
-            if title == "[삭제된 동영상]":
-                continue
             url = "https://youtu.be/{}".format(videoDOM.get("data-video-id"))
-            time = videoDOM.find("td", {"class": "pl-video-time"}).find("span").string
+            timeDOM = videoDOM.find("td", {"class": "pl-video-time"}).find("span")
+            if not timeDOM:
+                continue
+            time = timeDOM.string
             videos.append(Video(url=url, video_title=title, video_time=time))
         return videos
 
