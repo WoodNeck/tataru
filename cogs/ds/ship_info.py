@@ -40,7 +40,9 @@ class ShipInfo:
                 thumbUrl = ship["thumb"]
             if not embedColor:
                 embedColor = ship["color"]
-            crews = ship["crews"].append(crewId)
+            crews = set(ship["crews"])
+            crews.add(crewId)
+            crews = list(crews)
             self._info[shipName] = {"thumb": thumbUrl, "max": maxCrew, "crews": crews, "color": embedColor}
         else:
             self._info[shipName] = {"thumb": thumbUrl, "max": maxCrew, "crews": [crewId], "color": embedColor}
