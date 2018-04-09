@@ -31,8 +31,19 @@ class ShipInfo:
         with open(ShipInfo.FILE_PATH, "w") as f:
             f.write(json.dumps(totalInfo))
 
-    def addOrModifyShip(self, shipName, maxCrew, crewId, thumbUrl=None, embedColor=0xDEADBF):
-        self._info[shipName] = {"thumb": thumbUrl, "max": maxCrew, "crews": [crewId], "color": embedColor}
+    def addOrModifyShip(self, shipName, crewId, maxCrew=1, thumbUrl=None, embedColor=None):
+        if self._info.get(shipName):
+            ship = self._info[shipName]
+            if not maxCrew:
+                maxCrew = ship["max"]
+            if not thumbUrl:
+                thumbUrl = ship["thumb"]
+            if not embedColor:
+                embedColor = ship["color"]
+            crews = ship["crews"].append(crewId)
+            self._info[shipName] = {"thumb": thumbUrl, "max": maxCrew, "crews": crews, "color": embedColor}
+        else:
+            self._info[shipName] = {"thumb": thumbUrl, "max": maxCrew, "crews": [crewId], "color": embedColor}
         self.save()
 
     def removeShip(self, shipName, crewId):

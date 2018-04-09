@@ -295,11 +295,15 @@ class General():
         shipName = args[0]
         thumbUrl = None
         embedColor = None
-        try:
-            maxCrew = int(args[1])
-        except ValueError:
-            await self.bot.say("최대인원은 정수로 주세용!")
-            return
+        if (len(args) > 1):
+            try:
+                maxCrew = int(args[1])
+                if (maxCrew < 1):
+                    await self.bot.say("최소 1명 이상의 인원을 주세용")
+                    return
+            except ValueError:
+                await self.bot.say("최대인원은 정수로 주세용")
+                return
         if (len(args) > 2):
             thumbUrl = args[2]
         if (len(args) > 3):
@@ -310,7 +314,7 @@ class General():
                 return
 
         serverShipInfo = ShipInfo(ctx.message.server.id)
-        serverShipInfo.addOrModifyShip(shipName, maxCrew, ctx.message.author.id, thumbUrl, embedColor)
+        serverShipInfo.addOrModifyShip(shipName, ctx.message.author.id, maxCrew, thumbUrl, embedColor)
         em = await serverShipInfo.shipInfo(shipName, self.bot)
         await self.bot.send_message(ctx.message.channel, embed=em)
 
@@ -358,6 +362,7 @@ class General():
         serverShipInfo = ShipInfo(ctx.message.server.id)
         try:
             serverShipInfo.removeShip(shipName, ctx.message.author.id)
+            await self.bot.say("{} 배를 터트렸어용".format(shipName))
         except ShipNotExistError:
             await self.bot.say("해당 이름의 배가 존재하지 않아용")
 
