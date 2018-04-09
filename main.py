@@ -43,6 +43,8 @@ def initialize(bot_class=Bot):
     async def on_ready():
         print("{}".format(discord.version_info))
         print("{} 준비 다됬어용".format(bot.user))
+        print("{}개의 서버에서".format(len(bot.servers)))
+        print("{}명이 사용 중이에용".format(len(set(bot.get_all_members()))))
         await bot.change_presence(game=discord.Game(name="{}".format(prefix)))
 
     @bot.event
@@ -55,6 +57,20 @@ def initialize(bot_class=Bot):
         else:
             await bot.updatePublic(message)
             await bot.process_commands(message)
+
+    @bot.event
+    async def on_server_join(server):
+        for channel in server.channels:
+            defaultChannel = channel
+            break
+        githubUrl = "https://github.com/WoodNeck/tataru"
+        if not os.path.exists("./data/mutable/{}".format(server.id)):
+            serverFolders = ["jjal", "sound"]
+            for folder in serverFolders:
+                os.makedirs("./data/mutable/{}/{}".format(server.id, folder))
+            await bot.send_message(defaultChannel, "안뇽하세용 타타루에용!\n명령어는 {} 를 참조해주세용!".format(githubUrl))
+        else:
+            await bot.send_message(defaultChannel, "안뇽하세용 타타루에용!\n다시 초대해주셔서 고마워용!\n명령어는 {} 를 참조해주세용!".format(githubUrl))
 
     @bot.event
     async def on_command_error(error, ctx):
