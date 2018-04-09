@@ -2,6 +2,7 @@ import json
 from discord import Embed
 from pathlib import Path
 
+
 class ShipInfo:
     FILE_PATH = "ship_info.json"
 
@@ -59,7 +60,7 @@ class ShipInfo:
                 raise CrewNotExistError("Commander is not associated with this ship!")
         else:
             raise ShipNotExistError("Ship does not exist!")
-    
+
     def depart(self, shipName, crewId):
         if self._info.get(shipName):
             if crewId in self._info[shipName]["crews"]:

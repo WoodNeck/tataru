@@ -24,14 +24,14 @@ class General():
     async def 핑(self):
         await self.bot.say("퐁이에용")
 
-    @commands.command(hidden=True)
-    async def 파일관리(self):
+    @commands.command(pass_context=True)
+    async def 파일관리(self, ctx):
         from urllib.request import Request, urlopen
         request = Request("https://api.ipify.org/?format=json")
         response = urlopen(request)
         response_body = response.read().decode()
         ip = json.loads(response_body)["ip"]
-        await self.bot.say("http://{}:8000/".format(ip))
+        await self.bot.say("http://{}:8000/fs/{}".format(ip, ctx.message.server.id))
 
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number: int = 100):
@@ -63,7 +63,7 @@ class General():
         if arg == "추가해줘":
             await self.addDischargeInfo(ctx)
         else:
-            await self.printDischargeInfo(ctx)
+            await self.printDischargeInfo(ctx, arg)
 
     async def addDischargeInfo(self, ctx):
         name = await self.checkName(ctx)
@@ -83,9 +83,8 @@ class General():
         self.military.setData(ctx.message.server.id, name, info)
         em = discord.Embed(title="{}{}을(를) 추가했어용!".format(info.getSymbol(), name), colour=0xDEADBF)
         await self.bot.send_message(ctx.message.channel, embed=em)
-    
-    async def printDischargeInfo(self, ctx):
-        name = arg
+
+    async def printDischargeInfo(self, ctx, name):
         server = self.military.servers.get(ctx.message.server.id)
         if server and name in server:
             person = server[name]
