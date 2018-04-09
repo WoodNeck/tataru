@@ -34,6 +34,7 @@ sudo pip3 install youtube_dl
 sudo add-apt-repository ppa:mc3man/trusty-media
 sudo apt-get update
 sudo apt-get dist-upgrade
+sudo pip3 install lxml
 ```
 
 3. Execute main.py

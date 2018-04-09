@@ -102,7 +102,7 @@ class Sound:
                 musicPlayer = MusicPlayer(self, voiceClient, ctx.message.server, ctx.message.channel)
                 self.musicPlayers[ctx.message.server.id] = musicPlayer
             for video in videos:
-                song = Music(dataType, video[1], video[0], ctx.message.author, None)
+                song = Music(dataType, video.videoUrl, video.videoTitle, ctx.message.author, video.videoTime)
                 musicPlayer.add(song)
             await musicPlayer.play()
             await self.bot.send_message(ctx.message.channel, "{}개의 재생목록을 추가했어용".format(len(videos)))

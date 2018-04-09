@@ -92,22 +92,10 @@ class Google:
             searchText = " ".join(args[1:])
             if "list=" in searchText:
                 playListId = searchText[searchText.find("list=") + 5:].rstrip("&")
-                url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={}&key={}".format(playListId, self.youtube_key)
-                http = HTTPHandler()
-                try:
-                    response = http.get(url, None)
-                except URLError as error:
+                videos = self.searchVideoList(playListId)
+                if not videos:
                     await self.bot.say("주소가 올바르지 않아용")
-                    logging.error(str(error))
                     return
-                response_body = json.loads(response.read().decode())
-                _videos = response_body.get("items")
-                if not _videos:
-                    await self.bot.say("검색결과가 없어용")
-                    return
-                videos = []
-                for video in _videos:
-                    videos.append((video["snippet"]["title"], "https://youtu.be/{}".format(video["snippet"]["resourceId"]["videoId"])))
                 await Sound.instance.addList(ctx, MusicType.YOUTUBE, videos)
             else:
                 videos = self.searchVideos(searchText)
@@ -116,7 +104,7 @@ class Google:
                     return
                 video = videos[0]
                 await self.bot.delete_message(ctx.message)
-                await Sound.instance.play(ctx, MusicType.YOUTUBE, video.url, video.title, video.time)
+                await Sound.instance.play(ctx, MusicType.YOUTUBE, video.videUrl, video.videoTitle, video.videoTime)
         else:
             await self.bot.send_typing(ctx.message.channel)
             searchText = " ".join([arg for arg in args])
@@ -142,6 +130,22 @@ class Google:
             url = videoDOM.find('a').get("href")
             if self.isVideo(url):
                 videos.append(self.parseVideo(videoDOM))
+        return videos
+
+    def searchVideoList(self, playListId):
+        url = "https://www.youtube.com/playlist?list={}".format(playListId)
+        http = HTTPHandler()
+        response = http.get(url, self.headers)
+        html = BeautifulSoup(response.read().decode(), 'lxml')
+        videos = []
+        videoDOMs = html.find_all("tr", {"class": "pl-video"})
+        for videoDOM in videoDOMs:
+            title = videoDOM.get("data-title")
+            if title == "[삭제된 동영상]":
+                continue
+            url = "https://youtu.be/{}".format(videoDOM.get("data-video-id"))
+            time = videoDOM.find("td", {"class": "pl-video-time"}).find("span").string
+            videos.append(Video(url=url, video_title=title, video_time=time))
         return videos
 
     def isVideo(self, url):
@@ -170,8 +174,4 @@ class Video(Page):
 
 def setup(bot):
     cog = Google(bot)
-    if not __debug__:
-        config = BotConfig()
-        cog.youtube_key = config.request("Youtube", "API_KEY")
-        config.save()
     bot.add_cog(cog)

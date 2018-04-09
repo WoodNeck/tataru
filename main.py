@@ -7,7 +7,7 @@ from cogs.utils.botconfig import BotConfig
 from discord.ext import commands
 
 des = "타타루에용"
-prefix = "타타루 "
+prefix = "$"
 
 
 class Bot(commands.Bot):
@@ -67,7 +67,19 @@ def initialize(bot_class=Bot):
             await bot.send_message(channel, "비활성화된 명령어에용.")
         elif isinstance(error, commands.CommandInvokeError):
             await bot.send_message(channel, "명령어 실행에 실패했어용")
-            logging.error(str(error))
+            if ctx.message.server:
+                where = "{}({})/{}({})".format(
+                    ctx.message.server.name,
+                    ctx.message.server.id,
+                    ctx.message.channel.name,
+                    ctx.message.channel.id
+                )
+            else:  # Private Channel
+                if ctx.message.channel.owner is not None:  # Single user DM
+                    where = "DM with {}({})".format(ctx.message.channel.owner.name, ctx.message.channel.owner.id)
+                else:
+                    where = "Groupchat {}({})".format(ctx.message.channel.name, ctx.message.channel.id)
+            logging.error("{}\n    Caused by: {}\n    In: {}".format(error, ctx.message.content, where))
         elif isinstance(error, commands.CommandNotFound):
             pass
         elif isinstance(error, commands.CheckFailure):
@@ -86,7 +98,6 @@ def load_cogs(bot):
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and not file.startswith("__init__"):
             extensions.append(file.split('.')[0])
-
     failed = []
     for extension in extensions:
         try:
@@ -94,10 +105,8 @@ def load_cogs(bot):
         except Exception as e:
             print("{}: {}".format(e.__class__.__name__, str(e)))
             failed.append(extension)
-
     if failed:
         print("\n{}를 로드하는데 실패했어용.\n".format(" ".join(failed)))
-
     return failed
 
 
@@ -110,6 +119,6 @@ if __name__ == '__main__':
     token = config.request("BotUser", "Token")
     config.save()
 
-    logging.basicConfig(filename='./tataru.log', level=logging.ERROR)
+    logging.basicConfig(filename='./tataru.log', level=logging.ERROR, format='%(asctime)s %(message)s', datefmt='%Y/%m/%d %I:%M:%S %p')
 
     bot.run(token)
