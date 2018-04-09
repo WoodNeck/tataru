@@ -20,7 +20,7 @@ class Sound:
         self.loop = bot.loop
         self.lock = asyncio.Lock()
         self.musicPlayers = dict()
-        self.SOUND_PATH = "./data/mutable/sound"
+        self.SOUND_PATH = "./data/mutable"
 
     async def joinVoice(self, ctx):
         try:
@@ -66,13 +66,13 @@ class Sound:
         if len(args) == 0:
             await self.bot.say("재생할 사운드를 추가로 입력해주세용")
             return
-        soundString = " ".join([arg for arg in args])
-        if soundString == "목록":
-            await self.printSoundList(ctx.message.channel)
+        soundName = " ".join([arg for arg in args])
+        if soundName == "목록":
+            await self.printSoundList(ctx.message)
         else:
-            soundPath = "{}/{}.mp3".format(self.SOUND_PATH, soundString)  # Only .mp3 file is allowed
+            soundPath = "{}/{}/sound/{}.mp3".format(self.SOUND_PATH, ctx.message.server.id, soundName)  # Only .mp3 file is allowed
             if os.path.exists(soundPath):
-                await self.play(ctx, MusicType.LOCAL, soundPath, soundString)
+                await self.play(ctx, MusicType.LOCAL, soundPath, soundName)
             else:
                 await self.bot.say("없는 사운드에용")
 
@@ -133,10 +133,14 @@ class Sound:
             return
         await musicPlayer.skipIndex(ctx, index)
 
-    async def printSoundList(self, channel):
-        soundList = os.listdir("{}".format(self.SOUND_PATH))
+    async def printSoundList(self, message):
+        soundPath = "{}/{}/sound".format(self.SOUND_PATH, message.server.id)
+        soundList = os.listdir(soundPath)
         soundList = ["🎶" + sound.split(".")[0] for sound in soundList]
-        await self.bot.send_message(channel, "```{}```".format(" ".join(soundList)))
+        if soundList:
+            await self.bot.send_message(message.channel, "```{}```".format(" ".join(soundList)))
+        else:
+            await self.bot.send_message(message.channel, "재생할 수 있는 음악이 하나도 없어용")
 
     @commands.command(pass_context=True)
     async def 재생목록(self, ctx):

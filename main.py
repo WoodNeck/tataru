@@ -65,7 +65,7 @@ def initialize(bot_class=Bot):
             break
         githubUrl = "https://github.com/WoodNeck/tataru"
         if not os.path.exists("./data/mutable/{}".format(server.id)):
-            serverFolders = ["jjal", "sound"]
+            serverFolders = ["default", "sound"]
             for folder in serverFolders:
                 os.makedirs("./data/mutable/{}/{}".format(server.id, folder))
             await bot.send_message(defaultChannel, "안뇽하세용 타타루에용!\n명령어는 {} 를 참조해주세용!".format(githubUrl))
