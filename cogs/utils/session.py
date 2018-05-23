@@ -11,14 +11,13 @@ class Session:
     """
     공용 세션 클래스
     """
-    def __init__(self, bot, msg, pages=None, max_time=30, color=0xDEADBF, show_footer=False, is_embed=True):
+    def __init__(self, bot, msg, pages=None, max_time=30, show_footer=False, is_embed=True):
         self._index = 0
         self._bot = bot
         self._cmdMsg = msg
         self._author = msg.author
         self._pages = pages
         self._maxTime = max_time
-        self._embedColor = color
         self._emojiMenu = [SessionEmoji.PREV, SessionEmoji.NEXT, SessionEmoji.DELETE]
         self._callbacks = [self._prev, self._next, self.deleteMsg]
         self._is_embed = is_embed
@@ -67,7 +66,7 @@ class Session:
     async def _makeMsgContent(self):
         page = self._pages[self._index]
         if self._is_embed:
-            em = Embed(colour=self._embedColor)
+            em = Embed(colour=page.color)
             if page.title:
                 em.title = page.title
             if page.desc:
@@ -78,6 +77,9 @@ class Session:
                 em.set_image(url=page.image)
             if page.thumb:
                 em.set_thumbnail(url=page.thumb)
+            if page.fields:
+                for name, value in page.fields:
+                    em.add_field(name=name, value=value)
             if page.authorInfo:
                 em.set_author(
                     name=page.authorInfo.name,
@@ -145,11 +147,16 @@ class AuthorInfo:
 
 
 class Page:
-    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, authorInfo: AuthorInfo = None, footer_format=None):
+    def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, color=0xDEADBF, authorInfo: AuthorInfo = None, footer_format=None):
         self.title = title
         self.desc = desc
         self.url = url
+        self.color = color
         self.image = image
         self.thumb = thumb
+        self.fields = []
         self.authorInfo = authorInfo
         self.footer = footer_format
+
+    def add_field(self, name, value):
+        self.fields.append((name, value))
