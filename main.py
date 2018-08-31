@@ -127,6 +127,10 @@ def load_cogs(bot):
 
 
 if __name__ == '__main__':
+    # Changing current working directory to use relative directories
+    current_file_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(current_file_dir)
+
     bot = initialize()
     load_cogs(bot)
 
