@@ -65,13 +65,7 @@ class Google:
             if item == "no_links":
                 break
             else:
-                flag = False
-                possiblePostfix = [".jpg", ".png"]
-                for postfix in possiblePostfix:
-                    if item.lower().endswith(postfix):
-                        flag = True
-                if flag:
-                    items.append(item)
+                items.append(item)
                 page = page[end_content:]
         return items
 
@@ -123,7 +117,10 @@ class Google:
         videoDOMs = html.find_all("div", {"class": "yt-lockup-content"})
         videos = []
         for videoDOM in videoDOMs:
-            url = videoDOM.find('a').get("href")
+            urlTag = videoDOM.find('a')
+            if urlTag is None:
+                continue
+            url = urlTag.get("href")
             if self.isVideo(url):
                 videos.append(self.parseVideo(videoDOM))
         return videos
@@ -151,7 +148,10 @@ class Google:
     def parseVideo(self, video):
         videoTitle = video.find('a').get("title")
         videoUrl = "https://www.youtube.com{}".format(video.find('a').get("href"))
-        videoTime = video.find("span").string.lstrip("- 길이: ")
+        timeTag = video.find("span")
+        if ("yt-channel-title-icon-verified" in timeTag["class"]):
+            timeTag = timeTag.find_next("span")
+        videoTime = timeTag.string.lstrip("- 길이: ").lstrip("Duration: ").rstrip(".")
         videoDesc = "{} `[{}]`".format(videoUrl, videoTime)
         return Video(desc=videoDesc, url=videoUrl, video_title=videoTitle, video_time=videoTime)
 

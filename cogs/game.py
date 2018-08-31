@@ -34,15 +34,19 @@ class Games:
         results = html.find("ul", {"class": "search_results"})
 
         if not results:
-            recommendation = html.find("div", {"class": "search_results"}).find('a').get_text()
-            await self.bot.say("검색결과가 존재하지 않아용, 혹시 **{}**을(를) 검색하려던거 아닌가용?".format(recommendation))
+            recommendTag = html.find("div", {"class": "search_results"}).find('a')
+            if recommendTag:
+                recommendation = recommendTag.get_text()
+                await self.bot.say("검색결과가 존재하지 않아용, 혹시 **{}**을(를) 검색하려던거 아닌가용?".format(recommendation))
+            else:
+                await self.bot.say("검색결과가 존재하지 않아용")
         else:
             results = results.find_all("li")
             pages = list()
             for result in results:
                 stats = result.find("div", {"class": "main_stats"})
                 score = stats.find("span", {"class": "metascore_w"})
-                if not score:
+                if score is None:
                     continue
                 score = score.get_text()
                 title = stats.find("h3", {"class": "product_title"}).get_text().strip()
@@ -79,7 +83,11 @@ class Games:
                 page.add_field('genre', genre)
                 page.add_field('year', year)
                 pages.append(page)
-            
+
+            if (len(pages) == 0):
+                await self.bot.say("점수가 붙은 항목이 하나도 없는 것 같아용")
+                return
+
             session = Session(self.bot, ctx.message, pages, show_footer=True)
             await session.start()
 
