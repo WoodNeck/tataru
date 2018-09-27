@@ -217,10 +217,9 @@ class Naver(Observable):
 
 def setup(bot):
     naver = Naver(bot)
-    if not __debug__:
-        config = BotConfig()
-        clientId = config.request("Naver", "Client_ID")
-        clientSecret = config.request("Naver", "Client_Secret")
-        naver.setNaverClient(clientId, clientSecret)
-        config.save()
+    config = BotConfig()
+    clientId = config.request("Naver", "Client_ID")
+    clientSecret = config.request("Naver", "Client_Secret")
+    naver.setNaverClient(clientId, clientSecret)
+    config.save()
     bot.add_cog(naver)

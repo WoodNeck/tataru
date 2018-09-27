@@ -1,0 +1,1 @@
+DEV_GITHUB_URL = "https://github.com/WoodNeck/tataru"

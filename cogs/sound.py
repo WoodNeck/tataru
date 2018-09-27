@@ -181,6 +181,5 @@ def load_opus_lib(opus_libs=OPUS_LIBS):
 
 def setup(bot):
     cog = Sound(bot)
-    if not __debug__:
-        load_opus_lib()
+    load_opus_lib()
     bot.add_cog(cog)

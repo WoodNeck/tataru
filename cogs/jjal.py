@@ -7,7 +7,7 @@ from cogs.utils.observable import Observable
 class Jjal(Observable):
     def __init__(self, bot):
         self.bot = bot
-        # self.bot.listenPublicMsg(self)
+        self.bot.listenPublicMsg(self)
         self.IMAGE_PATH = "./data/mutable"
 
     async def update(self, message):
@@ -22,7 +22,7 @@ class Jjal(Observable):
         category = parsedMsg[0].lower()
         if category == "sound":
             return
-        if not os.path.isdir("{}/{}/{}".format(self.IMAGE_PATH, message.server.id, category).encode("utf-8")):
+        if not os.path.isdir("{}/{}/{}".format(self.IMAGE_PATH, message.server.id, category)):
             category = "default"
             imageName = " ".join(parsedMsg[0:])
         else:

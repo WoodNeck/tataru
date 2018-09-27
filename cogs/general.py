@@ -31,7 +31,7 @@ class General():
         response = urlopen(request)
         response_body = response.read().decode()
         ip = json.loads(response_body)["ip"]
-        await self.bot.say("http://{}:8000/fs/{}".format(ip, ctx.message.server.id))
+        await self.bot.say("http://{}/#/{}".format(ip, ctx.message.server.id))
 
     @commands.command(pass_context=True)
     async def 주사위(self, ctx, number: int = 100):
