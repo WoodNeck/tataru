@@ -1,5 +1,6 @@
 import os
 import discord
+import logging
 from discord.ext import commands
 from cogs.utils.observer import Observer
 from constants import DEV_GITHUB_URL
@@ -97,8 +98,8 @@ class Tataru(commands.Bot):
             elif isinstance(error, commands.NoPrivateMessage):
                 pass
             elif isinstance(error, commands.CommandOnCooldown):
-                await bot.send_message(channel, "지금은 할 수가 없어용"
-                                                "{:.2f}초 뒤에 다시 해주세용"
+                await bot.send_message(channel, "지금은 할 수가 없어용. "
+                                                "{:.1f}초 뒤에 다시 해주세용!"
                                                 "".format(error.retry_after))
         return bot
 

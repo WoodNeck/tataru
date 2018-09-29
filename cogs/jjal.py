@@ -35,8 +35,12 @@ class Jjal(Observable):
         if imageName == "랜덤":
             await self.deployRandomImage(message, category)
             return
+        
+        imageDir = "{}/{}/{}".format(self.IMAGE_PATH, message.server.id, category)
+        if not os.path.isdir(imageDir):
+            os.makedirs(imageDir)
 
-        for image in os.listdir("{}/{}/{}".format(self.IMAGE_PATH, message.server.id, category)):
+        for image in os.listdir(imageDir):
             if imageName == image.split('.')[0]:
                 await self.deployImage(message, category, image)
                 return

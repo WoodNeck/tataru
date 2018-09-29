@@ -382,6 +382,13 @@ class General():
         if ships:
             await self.bot.say(ships)
 
+    @commands.command(pass_context=True)
+    async def 따라해(self, ctx, *args):
+        userMsg = ctx.message
+        msgContent = " ".join(args)
+        await self.bot.delete_message(userMsg)
+        await self.bot.say(msgContent)
+        
 
 def setup(bot):
     general = General(bot)

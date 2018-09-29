@@ -35,6 +35,7 @@ sudo add-apt-repository ppa:mc3man/trusty-media
 sudo apt-get update
 sudo apt-get dist-upgrade
 sudo pip3 install lxml
+sudo pip3 install wordcloud
 ```
 
 3. Execute main.py
