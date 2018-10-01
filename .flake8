@@ -1,4 +1,0 @@
-[flake8]
-ignore = E501, E731, C901
-exclude = test/*
-max-complexity = 16

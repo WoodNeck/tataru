@@ -1,4 +1,5 @@
 import urllib
+import codecs
 from discord.ext import commands
 from .sound import Sound
 from cogs.utils.session import Session, Page
@@ -160,6 +161,36 @@ class Google:
         await session.deleteMsg()
         await Sound.instance.play(ctx, MusicType.YOUTUBE, video.videoUrl, video.videoTitle, video.videoTime)
 
+    @commands.command(pass_context=True)
+    async def 검색(self, ctx, *args):
+        await self.bot.send_typing(ctx.message.channel)
+        if len(args) == 0:
+            await self.bot.say("검색어를 추가로 입력해주세용")
+            return
+        searchText = " ".join([arg for arg in args])
+        encText = urllib.parse.quote(searchText.encode('utf-8'))
+        url = "https://www.google.co.kr/search?hl=ko&q={}".format(encText)
+        html = self.getHtml(url)
+        html = BeautifulSoup(html, 'lxml')
+
+        results = []
+        resultWrapper = html.find("div", {"id": "search"})
+        resultList = resultWrapper.find_all("div", {"class", "rc"})
+
+        for item in resultList:
+            title = item.find("h3").get_text()
+            url = item.find("a").get("href")
+            desc = item.find("span", {"class": "st"}).get_text()
+
+            title = codecs.decode(title, 'unicode_escape').encode("latin1").decode('utf-8')
+            desc = codecs.decode(desc, 'unicode_escape').encode("latin1").decode('utf-8')
+            
+            page = Page(title=title, desc=desc, url=url)
+            results.append(page)
+
+        session = Session(self.bot, ctx.message, results, show_footer=True)
+        await session.start()
+        
 
 class Video(Page):
     def __init__(self, title=None, desc=None, url=None, image=None, thumb=None, footer_format=None, video_title=None, video_time=None):
