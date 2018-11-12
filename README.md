@@ -1,6 +1,11 @@
 # 타타루(Tataru)
 [![Build Status](https://travis-ci.org/WoodNeck/tataru.svg?branch=staging)](https://travis-ci.org/WoodNeck/tataru)
 
+# 이 레포는 더이상 업데이트되지 않습니다.
+
+## 꼭 파이썬 언어를 사용해야 하는 것이 아니라면 [자바스크립트 버젼](https://github.com/WoodNeck/tataru-js)을 사용해주세요!
+
+
 한국어 명령어를 받는 디스코드용의 다목적 봇입니다.
 
 접두사는 "타타루"로 고정되어있지만, main.py 파일에서 수정 가능합니다.
